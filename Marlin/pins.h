@@ -1492,10 +1492,10 @@
   #define FAN_PIN            -1 // (Sprinter config)
   #define PS_ON_PIN          -1
   #define KILL_PIN           -1
-  #define HEATER_0_PIN       -1   // EXTRUDER 1
+  #define HEATER_0_PIN       13  // Marlin requires a heater, use debug led.
   #define HEATER_1_PIN       -1
   #define HEATER_2_PIN       -1   
-  #define TEMP_0_PIN         -1   // ANALOG NUMBERING
+  #define TEMP_0_PIN         0   // ANALOG NUMBERING
   #define TEMP_1_PIN         -1   // ANALOG NUMBERING
   #define TEMP_2_PIN         -1   // ANALOG NUMBERING
   #define HEATER_BED_PIN     -1   // BED
