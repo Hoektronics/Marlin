@@ -39,6 +39,7 @@
 #include "ConfigurationStore.h"
 #include "language.h"
 #include "pins_arduino.h"
+#include "mcp41xxx.h"
 
 #if DIGIPOTSS_PIN > -1
 #include <SPI.h>
@@ -310,6 +311,11 @@ void setup_spindle()
   #ifdef SPINDLE_RELAY_PIN
     SET_OUTPUT(SPINDLE_RELAY_PIN);
     WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+    
+    #ifdef MCP41XXX_SELECT_PIN
+      SET_OUTPUT(MCP41XXX_SELECT_PIN);
+      WRITE(MCP41XXX_SELECT_PIN, HIGH);
+    #endif
   #endif
 }
 
@@ -923,7 +929,16 @@ void process_commands()
     //M4 - start the spindle counterclockwise at the S speed.
     case 4:
       WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
-      break;    
+
+      #ifdef MCP41XXX_SELECT_PIN
+        if (code_seen('P'))
+        {
+          byte pwm = 255 * code_value();
+          mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 0);
+        }
+      #endif
+
+      break;
     //M5 - stop the spindle
     case 5:
       WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);

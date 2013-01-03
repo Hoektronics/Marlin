@@ -1504,9 +1504,8 @@
   //these are new pins for spindle control
   #define SPINDLE_RELAY_PIN   4
   #define INVERT_SPINDLE_ON   1
+  #define MCP41XXX_SELECT_PIN 38
   //#define TACHOMETER_PIN      2
-  //todo: figure out how this works.
-  //#define DIGIPOTSS_PIN 38
 
   //these are new pins for vacuum relay control
   #define VACUUM_RELAY_PIN    3
