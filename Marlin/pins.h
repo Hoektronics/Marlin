@@ -1501,20 +1501,25 @@
   #define HEATER_BED_PIN     -1   // BED
   #define TEMP_BED_PIN       -1   // ANALOG NUMBERING
 
-  //these are new pins for a CNC
-  #define TACHOMETER_PIN      2
-  #define VACUUM_RELAY_PIN    3
+  //these are new pins for spindle control
   #define SPINDLE_RELAY_PIN   4
-  #define DOOR_SWITCH_PIN     25
-  #define TOOL_ZERO_PIN       26
+  #define INVERT_SPINDLE_ON   1
+  //#define TACHOMETER_PIN      2
+  //todo: figure out how this works.
+  //#define DIGIPOTSS_PIN 38
+
+  //these are new pins for vacuum relay control
+  #define VACUUM_RELAY_PIN    3
+  #define INVERT_VACUUM_ON    1
+
+  //new pins for extra switches
+  //#define DOOR_SWITCH_PIN     25
+  //#define TOOL_ZERO_PIN       26
   
   //new custom pins for led strips
   #define LED_RED_PIN         7
   #define LED_GREEN_PIN       6
   #define LED_BLUE_PIN        8
-
-  //todo: figure out how this works.
-  //#define DIGIPOTSS_PIN 38
 #endif
 
 #ifndef KNOWN_BOARD

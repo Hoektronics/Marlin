@@ -66,6 +66,14 @@
 //RepRap M Codes
 // M0   - Unconditional stop - Wait for user to press a button on the LCD (Only if ULTRA_LCD is enabled)
 // M1   - Same as M0
+// M3   - spindle on, clockwise
+// M4   - spindle on, counter-clockwise
+// M5   - spindle off
+// M7   - turn mist coolant on.
+// M8   - turn flood coolant on.
+// M9   - turn all coolant off.
+// M10  - turn vacuum on.
+// M11  - turn vacuum off.
 // M104 - Set extruder target temp
 // M105 - Read current temp
 // M106 - Fan on
@@ -121,6 +129,7 @@
 // M303 - PID relay autotune S<temperature> sets the target temperature. (default target temperature = 150C)
 // M304 - Set bed PID parameters P I and D
 // M400 - Finish all moves
+// M420 - Set RGB LED PWM values to R<value> E<VALUE> B<value>
 // M500 - stores paramters in EEPROM
 // M501 - reads parameters from EEPROM (if you need reset them after you changed them temporarily).  
 // M502 - reverts to the default "factory settings".  You still need to store them in EEPROM afterwards if you want to.
@@ -296,6 +305,38 @@ void setup_powerhold()
  #endif
 }
 
+void setup_spindle()
+{
+  #ifdef SPINDLE_RELAY_PIN
+    SET_OUTPUT(SPINDLE_RELAY_PIN);
+    WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+  #endif
+}
+
+void setup_vacuum()
+{
+  #ifdef VACUUM_RELAY_PIN
+    SET_OUTPUT(VACUUM_RELAY_PIN);
+    WRITE(VACUUM_RELAY_PIN, INVERT_VACUUM_ON);
+  #endif  
+}
+
+void setup_rgb_leds()
+{
+  #ifdef LED_RED_PIN
+    SET_OUTPUT(LED_RED_PIN);
+    analogWrite(LED_RED_PIN, 0);
+  #endif    
+  #ifdef LED_GREEN_PIN
+    SET_OUTPUT(LED_GREEN_PIN);
+    analogWrite(LED_GREEN_PIN, 0);
+  #endif    
+  #ifdef LED_BLUE_PIN
+    SET_OUTPUT(LED_BLUE_PIN);
+    analogWrite(LED_BLUE_PIN, 0);
+  #endif    
+}
+
 void suicide()
 {
  #ifdef SUICIDE_PIN
@@ -313,6 +354,10 @@ void setup()
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
+  
+  setup_spindle();
+  setup_vacuum();
+  setup_rgb_leds();
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -862,6 +907,40 @@ void process_commands()
       LCD_MESSAGEPGM(MSG_RESUMING);
     }
     break;
+#endif
+#ifdef SPINDLE_RELAY_PIN
+    //M3 - start the spindle clockwise at the S speed.
+    case 3:
+    //M4 - start the spindle counterclockwise at the S speed.
+    case 4:
+      WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
+      break;    
+    //M5 - stop the spindle
+    case 5:
+      WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+      break;
+#endif
+#ifdef SPINDLE_COOLANT_PIN
+    //M7 - turn mist coolant on.
+    case 7:
+    //M8 - turn flood coolant on.
+    case 8:
+      WRITE(SPINDLE_COOLANT_PIN, !INVERT_COOLANT_ON);
+      break;
+    //M9 - turn all coolant off.
+    case 9:
+      WRITE(SPINDLE_COOLANT_PIN, INVERT_COOLANT_ON);
+      break;
+#endif
+#ifdef VACUUM_RELAY_PIN
+    //M8 - turn vacuum on.
+    case 10:
+      WRITE(VACUUM_RELAY_PIN, !INVERT_VACUUM_ON);
+      break;
+    //M9 - turn vacuum off.
+    case 11:
+      WRITE(VACUUM_RELAY_PIN, INVERT_VACUUM_ON);
+      break;
 #endif
     case 17:
         LCD_MESSAGEPGM(MSG_NO_MOVE);
@@ -1522,6 +1601,22 @@ void process_commands()
       #endif
     }
     break;
+    //M420 - Set the PWM values of the RGB leds.
+    case 420:
+    {
+      #ifdef LED_RED_PIN
+        if (code_seen('R'))
+          analogWrite(LED_RED_PIN, (uint8_t)code_value());
+      #endif
+      #ifdef LED_GREEN_PIN
+        if (code_seen('E'))
+          analogWrite(LED_GREEN_PIN, (uint8_t)code_value());
+      #endif
+      #ifdef LED_RED_PIN
+        if (code_seen('B'))
+          analogWrite(LED_BLUE_PIN, (uint8_t)code_value());
+      #endif
+    }
     case 351: // M351 Toggle MS1 MS2 pins directly, S# determines MS1 or MS2, X# sets the pin high/low.
     {
       #if X_MS1_PIN > -1
