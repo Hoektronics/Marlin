@@ -1573,6 +1573,7 @@ void process_commands()
     case 300: //Play beep sound - Usage: M300 S<frequency Hz> P<duration ms>
     {
      #ifdef BEEPER
+        /*
         long freq = 1000;
         long duration = 1000*1000;
         
@@ -1600,6 +1601,17 @@ void process_commands()
           WRITE(BEEPER, LOW);
           delayMicroseconds(halfdelay);
         }
+        */
+        
+        long freq = 1000;
+        long duration = 1000;
+        
+        if (code_seen('S'))
+          freq = code_value();
+        if (code_seen('P'))
+          duration = (long)code_value();
+        
+        tone(BEEPER, freq, duration);        
       #endif
     } 
     break;
