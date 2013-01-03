@@ -306,6 +306,17 @@ void setup_powerhold()
  #endif
 }
 
+volatile unsigned long last_tachometer_pulse = 0;
+volatile unsigned int spindle_rpm_target = 0;
+volatile unsigned int spindle_rpm_actual = 0;
+
+void tachometer_increment()
+{
+  unsigned long current_tachometer_pulse = millis();
+  spindle_rpm_actual = 60000 / current_tachometer_pulse;
+  last_tachometer_pulse = current_tachometer_pulse;
+}
+
 void setup_spindle()
 {
   #ifdef SPINDLE_RELAY_PIN
@@ -316,8 +327,13 @@ void setup_spindle()
       SET_OUTPUT(MCP41XXX_SELECT_PIN);
       WRITE(MCP41XXX_SELECT_PIN, HIGH);
     #endif
+    
+    #ifdef TACHOMETER_INTERRUPT
+      attachInterrupt(TACHOMETER_INTERRUPT, tachometer_increment, RISING);
+    #endif
   #endif
 }
+
 
 void setup_vacuum()
 {
