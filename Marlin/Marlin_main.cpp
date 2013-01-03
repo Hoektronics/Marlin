@@ -337,6 +337,14 @@ void setup_rgb_leds()
   #endif    
 }
 
+void setup_beeper()
+{
+  #ifdef BEEPER
+    SET_OUTPUT(BEEPER);
+    WRITE(BEEPER, LOW);
+  #endif
+}
+
 void suicide()
 {
  #ifdef SUICIDE_PIN
@@ -358,6 +366,7 @@ void setup()
   setup_spindle();
   setup_vacuum();
   setup_rgb_leds();
+  setup_beeper();
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -1530,6 +1539,39 @@ void process_commands()
      }
     break;
       
+    case 300: //Play beep sound - Usage: M300 S<frequency Hz> P<duration ms>
+    {
+     #ifdef BEEPER
+        long freq = 1000;
+        long duration = 1000*1000;
+        
+        if (code_seen('S'))
+          freq = code_value();
+        if (code_seen('P'))
+          duration = code_value()*1000;
+        
+        long micro_delay = (1000000 / freq);
+        long total = duration / micro_delay;
+        long halfdelay = micro_delay / 2;
+        
+        SERIAL_PROTOCOLPGM("delay:");
+        SERIAL_PROTOCOL(micro_delay);
+        SERIAL_PROTOCOLPGM(" total:");
+        SERIAL_PROTOCOL(total);
+        SERIAL_PROTOCOLPGM(" halfdelay:");
+        SERIAL_PROTOCOL(halfdelay);
+        SERIAL_PROTOCOLLN("");
+        
+        for (long i=0; i<total; i++)
+        {
+          WRITE(BEEPER, HIGH);
+          delayMicroseconds(halfdelay);
+          WRITE(BEEPER, LOW);
+          delayMicroseconds(halfdelay);
+        }
+      #endif
+    } 
+    break;
     case 302: // allow cold extrudes
     {
       allow_cold_extrudes(true);
