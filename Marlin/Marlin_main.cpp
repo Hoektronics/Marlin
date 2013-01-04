@@ -940,10 +940,9 @@ void process_commands()
     break;
 #endif
 #ifdef SPINDLE_RELAY_PIN
-    //M3 - start the spindle clockwise at the S speed.
-    case 3:
-    //M4 - start the spindle counterclockwise at the S speed.
-    case 4:
+    case 3: //M3 - start the spindle clockwise at the S speed.
+    case 4: //M4 - start the spindle counterclockwise at the S speed.
+      st_synchronize();
       WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
 
       #ifdef MCP41XXX_SELECT_PIN
@@ -955,30 +954,28 @@ void process_commands()
       #endif
 
       break;
-    //M5 - stop the spindle
-    case 5:
+    case 5: //M5 - stop the spindle
+      st_synchronize();
       WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
       break;
 #endif
 #ifdef SPINDLE_COOLANT_PIN
-    //M7 - turn mist coolant on.
-    case 7:
-    //M8 - turn flood coolant on.
-    case 8:
+    case 7: //M7 - turn mist coolant on.
+    case 8: //M8 - turn flood coolant on.
+      st_synchronize();
       WRITE(SPINDLE_COOLANT_PIN, !INVERT_COOLANT_ON);
       break;
-    //M9 - turn all coolant off.
-    case 9:
+    case 9: //M9 - turn all coolant off.
       WRITE(SPINDLE_COOLANT_PIN, INVERT_COOLANT_ON);
       break;
 #endif
 #ifdef VACUUM_RELAY_PIN
-    //M8 - turn vacuum on.
-    case 10:
+    case 10: //M10 - turn vacuum on.
+      st_synchronize();
       WRITE(VACUUM_RELAY_PIN, !INVERT_VACUUM_ON);
       break;
-    //M9 - turn vacuum off.
-    case 11:
+    case 11: //M11 - turn vacuum off.
+      st_synchronize();
       WRITE(VACUUM_RELAY_PIN, INVERT_VACUUM_ON);
       break;
 #endif
@@ -1602,7 +1599,7 @@ void process_commands()
           delayMicroseconds(halfdelay);
         }
         */
-        
+                
         long freq = 1000;
         long duration = 1000;
         
