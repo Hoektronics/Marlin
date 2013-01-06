@@ -274,10 +274,10 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 // default settings 
 // 1204 ball screws (4mm/rev) + 1.8deg motors = 1/32 microstep = 1 / (4 / (200*32)) = 1600
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {1600, 1600, 1600, 1600}  // default steps per unit for ultimaker 
-#define DEFAULT_MAX_FEEDRATE          {100, 100, 100, 100}    // (mm/sec)    
-#define DEFAULT_MAX_ACCELERATION      {40, 40, 40, 40}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+#define DEFAULT_MAX_FEEDRATE          {800/60, 800/60, 800/60, 800/60}    // (mm/sec)    
+#define DEFAULT_MAX_ACCELERATION      {50, 50, 50, 50}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          40    // X, Y, Z and E max acceleration in mm/s^2 for printing moves 
+#define DEFAULT_ACCELERATION          50    // X, Y, Z and E max acceleration in mm/s^2 for printing moves 
 #define DEFAULT_RETRACT_ACCELERATION  50   // X, Y, Z and E max acceleration in mm/s^2 for r retracts
 
 // 

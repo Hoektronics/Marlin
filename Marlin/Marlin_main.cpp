@@ -347,23 +347,51 @@ void setup_rgb_leds()
 {
   #ifdef LED_RED_PIN
     SET_OUTPUT(LED_RED_PIN);
+    for (int i=0; i<255; i++)
+    {
+      analogWrite(LED_RED_PIN, i);
+      delay(1);
+    }
     analogWrite(LED_RED_PIN, 0);
   #endif    
   #ifdef LED_GREEN_PIN
     SET_OUTPUT(LED_GREEN_PIN);
+    for (int i=0; i<255; i++)
+    {
+      analogWrite(LED_GREEN_PIN, i);
+      delay(1);
+    }
     analogWrite(LED_GREEN_PIN, 0);
   #endif    
   #ifdef LED_BLUE_PIN
     SET_OUTPUT(LED_BLUE_PIN);
+    for (int i=0; i<255; i++)
+    {
+      analogWrite(LED_BLUE_PIN, i);
+      delay(1);
+    }
     analogWrite(LED_BLUE_PIN, 0);
+  #endif
+  #ifdef LED_RED_PIN
+    analogWrite(LED_RED_PIN, 255);
   #endif    
+  #ifdef LED_GREEN_PIN
+    analogWrite(LED_GREEN_PIN, 255);
+  #endif    
+  #ifdef LED_BLUE_PIN
+    analogWrite(LED_BLUE_PIN, 255);
+  #endif
 }
 
 void setup_beeper()
 {
   #ifdef BEEPER
     SET_OUTPUT(BEEPER);
-    WRITE(BEEPER, LOW);
+    tone(BEEPER, 440, 250);
+    delay(250);
+    tone(BEEPER, 880, 250);
+    delay(250);
+    tone(BEEPER, 1760, 250);
   #endif
 }
 
@@ -384,11 +412,6 @@ void setup()
   MYSERIAL.begin(BAUDRATE);
   SERIAL_PROTOCOLLNPGM("start");
   SERIAL_ECHO_START;
-  
-  setup_spindle();
-  setup_vacuum();
-  setup_rgb_leds();
-  setup_beeper();
 
   // Check startup - does nothing if bootloader sets MCUSR to 0
   byte mcu = MCUSR;
@@ -429,13 +452,15 @@ void setup()
     axis_steps_per_sqr_second[i] = max_acceleration_units_per_sq_second[i] * axis_steps_per_unit[i];
   }
 
-
   tp_init();    // Initialize temperature loop 
   plan_init();  // Initialize planner;
   watchdog_init();
   st_init();    // Initialize stepper, this enables interrupts!
   setup_photpin();
-  
+  setup_spindle();
+  setup_vacuum();
+  setup_rgb_leds();
+  setup_beeper();
   lcd_init();
 }
 
