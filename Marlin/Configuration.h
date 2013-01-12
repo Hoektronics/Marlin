@@ -251,7 +251,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 #define X_MIN_POS 0
 #define Y_MAX_POS 180
 #define Y_MIN_POS 0
-#define Z_MAX_POS 50
+#define Z_MAX_POS 60
 #define Z_MIN_POS -5
 
 #define X_MAX_LENGTH (X_MAX_POS - X_MIN_POS)
@@ -269,21 +269,23 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 
 //// MOVEMENT SETTINGS
 #define NUM_AXIS 4 // The axis order in all axis related arrays is X, Y, Z, E
-#define HOMING_FEEDRATE {300, 300, 300, 0}  // set the homing speeds (mm/min)
+#define HOMING_FEEDRATE {1000, 700, 500, 0}  // set the homing speeds (mm/min)
 
 // default settings 
 // 1204 ball screws (4mm/rev) + 1.8deg motors = 1/32 microstep = 1 / (4 / (200*32)) = 1600
-#define DEFAULT_AXIS_STEPS_PER_UNIT   {1600, 1600, 1600, 1600}  // default steps per unit for ultimaker 
-#define DEFAULT_MAX_FEEDRATE          {800/60, 800/60, 800/60, 800/60}    // (mm/sec)    
-#define DEFAULT_MAX_ACCELERATION      {50, 50, 50, 50}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
-#define DEFAULT_ACCELERATION          50    // X, Y, Z and E max acceleration in mm/s^2 for printing moves 
-#define DEFAULT_RETRACT_ACCELERATION  50   // X, Y, Z and E max acceleration in mm/s^2 for r retracts
+#define SINGLE_ACCELERATION           100
+#define DEFAULT_AXIS_STEPS_PER_UNIT   {1600, 1600, 1600, 1600}  // default steps per unit (mm) 
+#define DEFAULT_MAX_FEEDRATE          {2000/60, 700/60, 800/60, 2000/60}    // (mm/sec)    
+#define DEFAULT_MAX_ACCELERATION      {SINGLE_ACCELERATION, SINGLE_ACCELERATION, SINGLE_ACCELERATION, SINGLE_ACCELERATION}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
+
+#define DEFAULT_ACCELERATION          SINGLE_ACCELERATION    // X, Y, Z and E max acceleration in mm/s^2 for printing moves 
+#define DEFAULT_RETRACT_ACCELERATION  SINGLE_ACCELERATION   // X, Y, Z and E max acceleration in mm/s^2 for r retracts
 
 // 
-#define DEFAULT_XYJERK                1.0    // (mm/sec)
-#define DEFAULT_ZJERK                 1.0     // (mm/sec)
-#define DEFAULT_EJERK                 1.0    // (mm/sec)
+#define DEFAULT_XYJERK                2.0    // (mm/sec)
+#define DEFAULT_ZJERK                 2.0     // (mm/sec)
+#define DEFAULT_EJERK                 2.0    // (mm/sec)
 
 //===========================================================================
 //=============================Additional Features===========================

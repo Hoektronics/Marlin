@@ -1510,8 +1510,9 @@
   //these are new pins for vacuum relay control
   #define VACUUM_RELAY_PIN    3
   #define INVERT_VACUUM_ON    1
-
+  
   //new pins for extra switches
+  #define PLAY_PIN     25
   //#define DOOR_SWITCH_PIN     25
   //#define TOOL_ZERO_PIN       26
   

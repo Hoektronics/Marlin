@@ -343,6 +343,14 @@ void setup_vacuum()
   #endif  
 }
 
+void setup_interface()
+{
+  #ifdef PLAY_PIN
+    SET_INPUT(PLAY_PIN);
+  #endif  
+}
+
+
 void setup_rgb_leds()
 {
   #ifdef LED_RED_PIN
@@ -461,6 +469,7 @@ void setup()
   setup_vacuum();
   setup_rgb_leds();
   setup_beeper();
+  setup_interface();
   lcd_init();
 }
 
@@ -955,6 +964,35 @@ void process_commands()
         }
       }else{
         while(!LCD_CLICKED){
+          manage_heater();
+          manage_inactivity();
+          lcd_update();
+        }
+      }
+      LCD_MESSAGEPGM(MSG_RESUMING);
+    }
+    break;
+#endif
+#ifdef PLAY_PIN
+    case 0: // M0 - Unconditional stop - Wait for user button press on LCD
+    case 1: // M1 - Conditional stop - Wait for user button press on LCD
+    {
+      LCD_MESSAGEPGM(MSG_USERWAIT);
+      codenum = 0;
+      if(code_seen('P')) codenum = code_value(); // milliseconds to wait
+      if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
+      
+      st_synchronize();
+      previous_millis_cmd = millis();
+      if (codenum > 0){
+        codenum += millis();  // keep track of when we started waiting
+        while(millis()  < codenum && digitalRead(PLAY_PIN)){
+          manage_heater();
+          manage_inactivity();
+          lcd_update();
+        }
+      }else{
+        while(digitalRead(PLAY_PIN)){
           manage_heater();
           manage_inactivity();
           lcd_update();
