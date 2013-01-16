@@ -306,15 +306,35 @@ void setup_powerhold()
  #endif
 }
 
+volatile unsigned long current_tachometer_pulse = 0;
+volatile unsigned long temp_last_tachometer_pulse = 0;
 volatile unsigned long last_tachometer_pulse = 0;
-volatile unsigned int spindle_rpm_target = 0;
-volatile unsigned int spindle_rpm_actual = 0;
+volatile int spindle_rpm_running[3] = {0, 0, 0};
+volatile int spindle_rpm_actual = 0;
+//volatile unsigned long spindle_rpm_target = 0;
+
+#define TACH_PULSE_MICROS 60000000
 
 void tachometer_increment()
 {
-  unsigned long current_tachometer_pulse = millis();
-  spindle_rpm_actual = 60000 / current_tachometer_pulse;
+  current_tachometer_pulse = micros();
+  spindle_rpm_running[2] = spindle_rpm_running[1];
+  spindle_rpm_running[1] = spindle_rpm_running[0];
+  spindle_rpm_running[0] = TACH_PULSE_MICROS / (current_tachometer_pulse - last_tachometer_pulse);
   last_tachometer_pulse = current_tachometer_pulse;
+
+  //the interrupts are being strange and triggering too soon sometimes.  this is a hack to pull out any strange values.
+  int ab = abs(spindle_rpm_running[0] - spindle_rpm_running[1]);
+  int ac = abs(spindle_rpm_running[0] - spindle_rpm_running[2]);
+  int bc = abs(spindle_rpm_running[1] - spindle_rpm_running[2]);
+  int minimum = min(ab, min(ac, bc));
+  
+  if (ab == minimum)
+    spindle_rpm_actual = (spindle_rpm_running[0] + spindle_rpm_running[1])/2;
+  else if (ac == minimum)
+    spindle_rpm_actual = (spindle_rpm_running[0] + spindle_rpm_running[2])/2;
+  else
+    spindle_rpm_actual = (spindle_rpm_running[1] + spindle_rpm_running[2])/2;
 }
 
 void setup_spindle()
@@ -1021,6 +1041,12 @@ void process_commands()
       st_synchronize();
       WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
       break;
+#endif
+#ifdef TACHOMETER_INTERRUPT
+      case 6: //M6 - Get spindle speed
+        SERIAL_ECHO("SPINDLE RPM:")
+        SERIAL_ECHOLN(spindle_rpm_actual)
+        break;
 #endif
 #ifdef SPINDLE_COOLANT_PIN
     case 7: //M7 - turn mist coolant on.
