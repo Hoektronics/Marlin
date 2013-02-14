@@ -344,6 +344,7 @@ void setup_spindle()
     WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
     
     #ifdef MCP41XXX_SELECT_PIN
+      mcp41xxx_init(MCP41XXX_SELECT_PIN);
       SET_OUTPUT(MCP41XXX_SELECT_PIN);
       WRITE(MCP41XXX_SELECT_PIN, HIGH);
     #endif
@@ -1031,8 +1032,8 @@ void process_commands()
       #ifdef MCP41XXX_SELECT_PIN
         if (code_seen('P'))
         {
-          byte pwm = 255 * code_value();
-          mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 0);
+          uint8_t pwm = (uint8_t)code_value_long();
+          mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 1);
         }
       #endif
 
@@ -1044,8 +1045,8 @@ void process_commands()
 #endif
 #ifdef TACHOMETER_INTERRUPT
       case 6: //M6 - Get spindle speed
-        SERIAL_ECHO("SPINDLE RPM:")
-        SERIAL_ECHOLN(spindle_rpm_actual)
+        SERIAL_ECHO("SPINDLE RPM:");
+        SERIAL_ECHOLN(spindle_rpm_actual);
         break;
 #endif
 #ifdef SPINDLE_COOLANT_PIN

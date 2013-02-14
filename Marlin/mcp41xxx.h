@@ -21,6 +21,9 @@
 #ifndef mcp41xxx_h
 #define mcp41xxx_h
 
+#include "Marlin.h"
+#include "SPI.h"
+
 void mcp41xxx_init(uint8_t cs_pin);
 uint8_t mcp41xxx_write(uint8_t cs_pin, uint8_t data, bool pot0, bool pot1);
 uint8_t mcp41xxx_shutdown(uint8_t cs_pin, bool pot0, bool pot1);

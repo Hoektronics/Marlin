@@ -18,8 +18,7 @@
   along with Grbl.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-#include "Marlin.h"
-#include "SPI.h"
+#include "mcp41xxx.h"
 
 void mcp41xxx_init(uint8_t cs_pin)
 {
@@ -27,19 +26,16 @@ void mcp41xxx_init(uint8_t cs_pin)
   SPI.setBitOrder(MSBFIRST);
   SPI.setDataMode(SPI_MODE0);
   SPI.setClockDivider(SPI_CLOCK_DIV4);
-  
-  pinMode(cs_pin, OUTPUT);
-  digitalWrite(cs_pin, HIGH);
 }
 
 uint8_t mcp41xxx_write(uint8_t cs_pin, uint8_t data, bool pot0, bool pot1)
 {
-  uint8_t command = (0x01 << 5) | (pot1 << 1) | pot0;
-  
-  digitalWrite(cs_pin, LOW);
+  uint8_t command = (0x01 << 4) | (pot1 << 1) | pot0;
+
+  WRITE(MCP41XXX_SELECT_PIN, 0);
   SPI.transfer(command);
   uint8_t result = SPI.transfer(data);
-  digitalWrite(cs_pin, HIGH);
+  WRITE(MCP41XXX_SELECT_PIN, 1);
   
   return result;
 }
