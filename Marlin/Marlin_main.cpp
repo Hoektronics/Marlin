@@ -195,6 +195,7 @@ static int buflen = 0;
 static char serial_char;
 static int serial_count = 0;
 static boolean comment_mode = false;
+static boolean comment_parens = false;
 static char *strchr_pointer; // just a pointer to find chars in the cmd string like X, Y, Z, E, etc
 
 const int sensitive_pins[] = SENSITIVE_PINS; // Sensitive pin list for M42
@@ -547,11 +548,13 @@ void get_command()
     {
       if(!serial_count) { //if empty line
         comment_mode = false; //for new command
+        comment_parens = false;
         return;
       }
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
       if(!comment_mode){
         comment_mode = false; //for new command
+        comment_parens = false;
         fromsd[bufindw] = false;
         if(strchr(cmdbuffer[bufindw], 'N') != NULL)
         {
@@ -639,8 +642,14 @@ void get_command()
     }
     else
     {
-      if(serial_char == ';') comment_mode = true;
-      if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
+      if(serial_char == ';')
+        comment_mode = true;
+      //if (serial_char == '(')
+      //  comment_parens = true;
+      if(!comment_mode && !comment_parens)
+        cmdbuffer[bufindw][serial_count++] = serial_char;
+      //if (serial_char == ')')
+      //  comment_parens = false;
     }
   }
   #ifdef SDSUPPORT
