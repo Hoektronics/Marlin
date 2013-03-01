@@ -182,7 +182,7 @@ static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
 static float feedrate = 1500.0, next_feedrate, saved_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
-int lastGMode = -1;
+static int lastGMode = -1;
 
 static bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 
@@ -500,28 +500,29 @@ void loop()
 {
   if(buflen < (BUFSIZE-1))
     get_command();
+  
   #ifdef SDSUPPORT
-  card.checkautostart(false);
+    card.checkautostart(false);
   #endif
   if(buflen)
   {
     #ifdef SDSUPPORT
       if(card.saving)
       {
-	if(strstr_P(cmdbuffer[bufindr], PSTR("M29")) == NULL)
-	{
-	  card.write_command(cmdbuffer[bufindr]);
-	  SERIAL_PROTOCOLLNPGM(MSG_OK);
-	}
-	else
-	{
-	  card.closefile();
-	  SERIAL_PROTOCOLLNPGM(MSG_FILE_SAVED);
-	}
+      	if(strstr_P(cmdbuffer[bufindr], PSTR("M29")) == NULL)
+      	{
+      	  card.write_command(cmdbuffer[bufindr]);
+      	  SERIAL_PROTOCOLLNPGM(MSG_OK);
+      	}
+      	else
+      	{
+      	  card.closefile();
+      	  SERIAL_PROTOCOLLNPGM(MSG_FILE_SAVED);
+      	}
       }
       else
       {
-	process_commands();
+	      process_commands();
       }
     #else
       process_commands();
@@ -538,30 +539,43 @@ void loop()
 
 void get_command() 
 { 
+  comment_mode = false;
+
   //pull in bytes
-  while( MYSERIAL.available() > 0  && buflen < BUFSIZE) {
+  while( MYSERIAL.available() > 0  && buflen < BUFSIZE)
+  {
     serial_char = MYSERIAL.read();
     //MYSERIAL.print(serial_char);
+    
+    //look for end of line stuff
     if(serial_char == '\n' || 
        serial_char == '\r' || 
-       (serial_char == ':' && comment_mode == false) || 
+       (serial_char == ';' && comment_mode == false) || 
        serial_count >= (MAX_CMD_SIZE - 1) ) 
     {
-      if(!serial_count) { //if empty line
+      //if empty line
+      if(!serial_count)
+      {
         comment_mode = false; //for new command
         return;
       }
-      cmdbuffer[bufindw][serial_count] = 0; //terminate string
-      if(!comment_mode){
-        comment_mode = false; //for new command
-        fromsd[bufindw] = false;
-        MYSERIAL.print("GOT:");
+      
+      //terminate string
+      cmdbuffer[bufindw][serial_count] = 0; 
+      
+      //is it a real command to process?
+      if(!comment_mode)
+      {
+        MYSERIAL.print("GOT:");        
         MYSERIAL.println(cmdbuffer[bufindw]);
+        
+        //did we get a line number?
         if(strchr(cmdbuffer[bufindw], 'N') != NULL)
         {
           strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
           gcode_N = (strtol(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL, 10));
-          if(gcode_N != gcode_LastN+1 && (strstr_P(cmdbuffer[bufindw], PSTR("M110")) == NULL) ) {
+          if(gcode_N != gcode_LastN+1 && (strstr_P(cmdbuffer[bufindw], PSTR("M110")) == NULL) )
+          {
             SERIAL_ERROR_START;
             SERIAL_ERRORPGM(MSG_ERR_LINE_NO);
             SERIAL_ERRORLN(gcode_LastN);
@@ -579,7 +593,8 @@ void get_command()
             while(cmdbuffer[bufindw][count] != '*') checksum = checksum^cmdbuffer[bufindw][count++];
             strchr_pointer = strchr(cmdbuffer[bufindw], '*');
 
-            if( (int)(strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)) != checksum) {
+            if( (int)(strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)) != checksum)
+            {
               SERIAL_ERROR_START;
               SERIAL_ERRORPGM(MSG_ERR_CHECKSUM_MISMATCH);
               SERIAL_ERRORLN(gcode_LastN);
@@ -602,103 +617,127 @@ void get_command()
           gcode_LastN = gcode_N;
           //if no errors, continue parsing
         }
-        else  // if we don't receive 'N' but still see '*'
+        // if we don't receive 'N' but still see '*'
+        else if((strchr(cmdbuffer[bufindw], '*') != NULL))
         {
-          if((strchr(cmdbuffer[bufindw], '*') != NULL))
-          {
-            SERIAL_ERROR_START;
-            SERIAL_ERRORPGM(MSG_ERR_NO_LINENUMBER_WITH_CHECKSUM);
-            SERIAL_ERRORLN(gcode_LastN);
-            serial_count = 0;
-            return;
-          }
+          SERIAL_ERROR_START;
+          SERIAL_ERRORPGM(MSG_ERR_NO_LINENUMBER_WITH_CHECKSUM);
+          SERIAL_ERRORLN(gcode_LastN);
+          serial_count = 0;
+          return;
         }
-        if((strchr(cmdbuffer[bufindw], 'G') != NULL)){
-          strchr_pointer = strchr(cmdbuffer[bufindw], 'G');
-          switch((int)((strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL)))){
-          case 0:
-          case 1:
-          case 2:
-          case 3:
-            if(Stopped == false) { // If printer is stopped by an error the G[0-3] codes are ignored.
-	      #ifdef SDSUPPORT
-              if(card.saving)
-                break;
-	      #endif //SDSUPPORT
-              SERIAL_PROTOCOLLNPGM(MSG_OK); 
-            }
-            else {
-              SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
-              LCD_MESSAGEPGM(MSG_STOPPED);
-            }
-            break;
-          default:
-            break;
-          }
 
+        if((strchr(cmdbuffer[bufindw], 'G') != NULL))
+        {
+          strchr_pointer = strchr(cmdbuffer[bufindw], 'G');
+          switch((int)((strtod(&cmdbuffer[bufindw][strchr_pointer - cmdbuffer[bufindw] + 1], NULL))))
+          {
+            case 0:
+            case 1:
+            case 2:
+            case 3:
+              if(Stopped == false)
+              { // If printer is stopped by an error the G[0-3] codes are ignored.
+        	      #ifdef SDSUPPORT
+                  if(card.saving)
+                    break;
+        	      #endif //SDSUPPORT
+                SERIAL_PROTOCOLLNPGM(MSG_OK); 
+              }
+              else
+              {
+                SERIAL_ERRORLNPGM(MSG_ERR_STOPPED);
+                LCD_MESSAGEPGM(MSG_STOPPED);
+              }
+              break;
+            default:
+              break;
+          }
         }
         bufindw = (bufindw + 1)%BUFSIZE;
         buflen += 1;
       }
+      
+      comment_mode = false; //clear comment flag.
       serial_count = 0; //clear buffer
     }
+    //not end of a line, did we get a character?
     else
     {
-      if(serial_char == ';') comment_mode = true;
-      if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
-    }
-  }
-  #ifdef SDSUPPORT
-  if(!card.sdprinting || serial_count!=0){
-    return;
-  }
-  while( !card.eof()  && buflen < BUFSIZE) {
-    int16_t n=card.get();
-    serial_char = (char)n;
-    if(serial_char == '\n' || 
-       serial_char == '\r' || 
-       (serial_char == ':' && comment_mode == false) || 
-       serial_count >= (MAX_CMD_SIZE - 1)||n==-1) 
-    {
-      if(card.eof()){
-        SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
-        stoptime=millis();
-        char time[30];
-        unsigned long t=(stoptime-starttime)/1000;
-        int hours, minutes;
-        minutes=(t/60)%60;
-        hours=t/60/60;
-        sprintf_P(time, PSTR("%i hours %i minutes"),hours, minutes);
-        SERIAL_ECHO_START;
-        SERIAL_ECHOLN(time);
-        lcd_setstatus(time);
-        card.printingHasFinished();
-        card.checkautostart(true);
-        
-      }
-      if(!serial_count)
+      if(serial_char == ';') 
+        comment_mode = true;
+      if(!comment_mode)
       {
-        comment_mode = false; //for new command
-        return; //if empty line
+        MYSERIAL.print(serial_char);
+        MYSERIAL.print(" [");
+        MYSERIAL.print(bufindw);
+        MYSERIAL.print("][");
+        MYSERIAL.print(serial_count);
+        MYSERIAL.println("]");
+
+        cmdbuffer[bufindw][serial_count] = serial_char;
+        serial_count++;
       }
-      cmdbuffer[bufindw][serial_count] = 0; //terminate string
-//      if(!comment_mode){
-        fromsd[bufindw] = true;
-        buflen += 1;
-        bufindw = (bufindw + 1)%BUFSIZE;
-//      }     
-      comment_mode = false; //for new command
-      serial_count = 0; //clear buffer
-    }
-    else
-    {
-      if(serial_char == ';') comment_mode = true;
-      if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
     }
   }
   
+  #ifdef SDSUPPORT
+    MYSERIAL.println("SD ENABLED!!!!");
+    sd_read_data();
   #endif //SDSUPPORT
+}
 
+void sd_read_data()
+{
+  #ifdef SDSUPPORT
+    if(!card.sdprinting || serial_count!=0){
+      return;
+    }
+    while( !card.eof()  && buflen < BUFSIZE) {
+      int16_t n=card.get();
+      serial_char = (char)n;
+      if(serial_char == '\n' || 
+         serial_char == '\r' || 
+         (serial_char == ':' && comment_mode == false) || 
+         serial_count >= (MAX_CMD_SIZE - 1)||n==-1) 
+      {
+        if(card.eof()){
+          SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
+          stoptime=millis();
+          char time[30];
+          unsigned long t=(stoptime-starttime)/1000;
+          int hours, minutes;
+          minutes=(t/60)%60;
+          hours=t/60/60;
+          sprintf_P(time, PSTR("%i hours %i minutes"),hours, minutes);
+          SERIAL_ECHO_START;
+          SERIAL_ECHOLN(time);
+          lcd_setstatus(time);
+          card.printingHasFinished();
+          card.checkautostart(true);
+
+        }
+        if(!serial_count)
+        {
+          comment_mode = false; //for new command
+          return; //if empty line
+        }
+        cmdbuffer[bufindw][serial_count] = 0; //terminate string
+  //      if(!comment_mode){
+          fromsd[bufindw] = true;
+          buflen += 1;
+          bufindw = (bufindw + 1)%BUFSIZE;
+  //      }     
+        comment_mode = false; //for new command
+        serial_count = 0; //clear buffer
+      }
+      else
+      {
+        if(serial_char == ';') comment_mode = true;
+        if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
+      }
+    }
+  #endif //SDSUPPORT
 }
 
 
