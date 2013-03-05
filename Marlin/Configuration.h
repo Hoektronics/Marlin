@@ -197,7 +197,7 @@
 
 // The pullups are needed if you directly connect a mechanical endswitch between the signal and ground pins.
 // corse Endstop Settings
-//#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
+#define ENDSTOPPULLUPS // Comment this out (using // at the start of the line) to disable the endstop pullup resistors
 #ifndef ENDSTOPPULLUPS
   // fine Enstop settings: Individual Pullups. will be ignord if ENDSTOPPULLUPS is defined
   //#define ENDSTOPPULLUP_XMAX
@@ -280,7 +280,7 @@ const bool Z_ENDSTOPS_INVERTING = true; // set to true to invert the logic of th
 
 #define SINGLE_ACCELERATION           100
 #define DEFAULT_AXIS_STEPS_PER_UNIT   {1600, 1600, 1600, 1600}  // default steps per unit (mm) 
-#define DEFAULT_MAX_FEEDRATE          {2000/60, 700/60, 800/60, 2000/60}    // (mm/sec)    
+#define DEFAULT_MAX_FEEDRATE          {800, 800, 800, 800}    // (mm/sec)    
 #define DEFAULT_MAX_ACCELERATION      {SINGLE_ACCELERATION, SINGLE_ACCELERATION, SINGLE_ACCELERATION, SINGLE_ACCELERATION}    // X, Y, Z, E maximum start speed for accelerated moves. E default values are good for skeinforge 40+, for older versions raise them a lot.
 
 #define DEFAULT_ACCELERATION          SINGLE_ACCELERATION    // X, Y, Z and E max acceleration in mm/s^2 for printing moves 

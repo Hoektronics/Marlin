@@ -180,9 +180,9 @@ const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 static float destination[NUM_AXIS] = {  0.0, 0.0, 0.0, 0.0};
 static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
-static float feedrate = 1500.0, next_feedrate, saved_feedrate;
+static float feedrate = 1500.0, next_feedrate, saved_feedrate, g1_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
-static int lastGMode = -1;
+static int lastGMode = 0;
 
 static bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 
@@ -195,6 +195,7 @@ static int buflen = 0;
 static char serial_char;
 static int serial_count = 0;
 static boolean comment_mode = false;
+static boolean comment_parens = false;
 static char *strchr_pointer; // just a pointer to find chars in the cmd string like X, Y, Z, E, etc
 
 const int sensitive_pins[] = SENSITIVE_PINS; // Sensitive pin list for M42
@@ -557,19 +558,18 @@ void get_command()
       if(!serial_count)
       {
         comment_mode = false; //for new command
+        comment_parens = false;
         return;
       }
-      
-      //terminate string
-      cmdbuffer[bufindw][serial_count] = 0; 
-      
-      //is it a real command to process?
-      if(!comment_mode)
-      {
-        MYSERIAL.print("GOT:");        
-        MYSERIAL.println(cmdbuffer[bufindw]);
-        
-        //did we get a line number?
+
+      MYSERIAL.print("GOT1: ");
+      MYSERIAL.println(cmdbuffer[bufindw]);
+      cmdbuffer[bufindw][serial_count] = 0; //terminate string
+      if(!comment_mode){
+        comment_mode = false; //for new command
+        comment_parens = false;
+        fromsd[bufindw] = false;
+
         if(strchr(cmdbuffer[bufindw], 'N') != NULL)
         {
           strchr_pointer = strchr(cmdbuffer[bufindw], 'N');
@@ -585,6 +585,9 @@ void get_command()
             serial_count = 0;
             return;
           }
+
+          MYSERIAL.print("GOT2: ");
+          MYSERIAL.println(cmdbuffer[bufindw]);
 
           if(strchr(cmdbuffer[bufindw], '*') != NULL)
           {
@@ -664,6 +667,7 @@ void get_command()
     //not end of a line, did we get a character?
     else
     {
+<<<<<<< HEAD
       if(serial_char == ';') 
         comment_mode = true;
       if(!comment_mode)
@@ -678,6 +682,17 @@ void get_command()
         cmdbuffer[bufindw][serial_count] = serial_char;
         serial_count++;
       }
+=======
+      if(serial_char == ';')
+        comment_mode = true;
+      //if (serial_char == '(')
+      //  comment_parens = true;
+      //if(!comment_mode && !comment_parens)
+      if(!comment_mode)
+        cmdbuffer[bufindw][serial_count++] = serial_char;
+      //if (serial_char == ')')
+      //  comment_parens = false;
+>>>>>>> working
     }
   }
   
@@ -817,11 +832,16 @@ static void homeaxis(int axis) {
 }
 #define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
 
+<<<<<<< HEAD
 void process_gcode(int codevalue)
+=======
+boolean process_gcodes(int code)
+>>>>>>> working
 {
   unsigned long codenum; //throw away variable
   char *starpos = NULL;
   
+<<<<<<< HEAD
   switch(codevalue)
   {
   case 0: // G0 -> G1
@@ -831,19 +851,52 @@ void process_gcode(int codevalue)
       prepare_move();
       //ClearToSend();
       return;
+=======
+  switch(code)
+  {
+  case 0: // G0 - max speed move
+    if(Stopped == false) {
+      get_coordinates(); // For X Y Z E F
+      if (code_seen('X'))
+        feedrate = max_feedrate[0];
+      if (code_seen('Y'))
+        feedrate = max_feedrate[1];
+      if (code_seen('Z'))
+        feedrate = max_feedrate[2];
+      prepare_move();
+      return false;
+    }
+  case 1: // G1 - controlled speed move
+    if(Stopped == false) {
+      get_coordinates(); // For X Y Z E F
+      // if (!code_seen('F'))
+      //   feedrate = g1_feedrate;
+      //g1_feedrate = feedrate;
+      prepare_move();
+      //ClearToSend();
+      return false;
+>>>>>>> working
     }
     //break;
   case 2: // G2  - CW ARC
     if(Stopped == false) {
       get_arc_coordinates();
       prepare_arc_move(true);
+<<<<<<< HEAD
       return;
+=======
+      return false;
+>>>>>>> working
     }
   case 3: // G3  - CCW ARC
     if(Stopped == false) {
       get_arc_coordinates();
       prepare_arc_move(false);
+<<<<<<< HEAD
       return;
+=======
+      return false;
+>>>>>>> working
     }
   case 4: // G4 dwell
     LCD_MESSAGEPGM(MSG_DWELL);
@@ -1002,6 +1055,7 @@ void process_gcode(int codevalue)
     }
     break;
   }
+<<<<<<< HEAD
 }
 
 void process_mcode(int codevalue)
@@ -1375,6 +1429,600 @@ void process_mcode(int codevalue)
               SERIAL_PROTOCOLLN(""); 
               codenum = millis(); 
             }
+=======
+  
+  return true;
+}
+
+
+boolean process_mcodes(int code)
+{
+  unsigned long codenum; //throw away variable
+  char *starpos = NULL;
+
+      switch( (int)code_value() ) 
+      {
+  #ifdef ULTIPANEL
+      case 0: // M0 - Unconditional stop - Wait for user button press on LCD
+      case 1: // M1 - Conditional stop - Wait for user button press on LCD
+      {
+        LCD_MESSAGEPGM(MSG_USERWAIT);
+        codenum = 0;
+        if(code_seen('P')) codenum = code_value(); // milliseconds to wait
+        if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
+
+        st_synchronize();
+        previous_millis_cmd = millis();
+        if (codenum > 0){
+          codenum += millis();  // keep track of when we started waiting
+          while(millis()  < codenum && !LCD_CLICKED){
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          }
+        }else{
+          while(!LCD_CLICKED){
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          }
+        }
+        LCD_MESSAGEPGM(MSG_RESUMING);
+      }
+      break;
+  #endif
+  #ifdef PLAY_PIN
+      case 0: // M0 - Unconditional stop - Wait for user button press on LCD
+      case 1: // M1 - Conditional stop - Wait for user button press on LCD
+      {
+        LCD_MESSAGEPGM(MSG_USERWAIT);
+        codenum = 0;
+        if(code_seen('P')) codenum = code_value(); // milliseconds to wait
+        if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
+
+        st_synchronize();
+        previous_millis_cmd = millis();
+        if (codenum > 0){
+          codenum += millis();  // keep track of when we started waiting
+          while(millis()  < codenum && digitalRead(PLAY_PIN)){
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          }
+        }else{
+          while(digitalRead(PLAY_PIN)){
+>>>>>>> working
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          }
+<<<<<<< HEAD
+          LCD_MESSAGEPGM(MSG_BED_DONE);
+          previous_millis_cmd = millis();
+      #endif
+          break;
+
+      #if FAN_PIN > -1
+        case 106: //M106 Fan On
+          if (code_seen('S')){
+             fanSpeed=constrain(code_value(),0,255);
+          }
+          else {
+            fanSpeed=255;			
+          }
+          break;
+        case 107: //M107 Fan Off
+          fanSpeed = 0;
+          break;
+      #endif //FAN_PIN
+
+      #if (PS_ON_PIN > -1)
+        case 80: // M80 - ATX Power On
+          SET_OUTPUT(PS_ON_PIN); //GND
+          WRITE(PS_ON_PIN, LOW);
+          break;
+        #endif
+
+        case 81: // M81 - ATX Power Off
+
+        #if defined SUICIDE_PIN && SUICIDE_PIN > -1
+          st_synchronize();
+          suicide();
+        #elif (PS_ON_PIN > -1)
+          SET_OUTPUT(PS_ON_PIN); 
+          WRITE(PS_ON_PIN, HIGH);
+        #endif
+  		break;
+
+      case 82:
+        axis_relative_modes[3] = false;
+        break;
+      case 83:
+        axis_relative_modes[3] = true;
+        break;
+      case 18: //compatibility
+      case 84: // M84
+        if(code_seen('S')){ 
+          stepper_inactive_time = code_value() * 1000; 
+        }
+        else
+        { 
+          bool all_axis = !((code_seen(axis_codes[0])) || (code_seen(axis_codes[1])) || (code_seen(axis_codes[2]))|| (code_seen(axis_codes[3])));
+          if(all_axis)
+          {
+            st_synchronize();
+            disable_e0();
+            disable_e1();
+            disable_e2();
+            finishAndDisableSteppers();
+          }
+          else
+          {
+            st_synchronize();
+            if(code_seen('X')) disable_x();
+            if(code_seen('Y')) disable_y();
+            if(code_seen('Z')) disable_z();
+            #if ((E0_ENABLE_PIN != X_ENABLE_PIN) && (E1_ENABLE_PIN != Y_ENABLE_PIN)) // Only enable on boards that have seperate ENABLE_PINS
+              if(code_seen('E')) {
+                disable_e0();
+                disable_e1();
+                disable_e2();
+              }
+            #endif 
+          }
+        }
+        break;
+      case 85: // M85
+        code_seen('S');
+        max_inactive_time = code_value() * 1000; 
+        break;
+      case 92: // M92
+        for(int8_t i=0; i < NUM_AXIS; i++) 
+        {
+          if(code_seen(axis_codes[i])) 
+          {
+            if(i == 3) { // E
+              float value = code_value();
+              if(value < 20.0) {
+                float factor = axis_steps_per_unit[i] / value; // increase e constants if M92 E14 is given for netfab.
+                max_e_jerk *= factor;
+                max_feedrate[i] *= factor;
+                axis_steps_per_sqr_second[i] *= factor;
+              }
+              axis_steps_per_unit[i] = value;
+            }
+            else {
+              axis_steps_per_unit[i] = code_value();
+            }
+          }
+        }
+=======
+        }
+        LCD_MESSAGEPGM(MSG_RESUMING);
+      }
+      break;
+  #endif
+  #ifdef SPINDLE_RELAY_PIN
+      case 3: //M3 - start the spindle clockwise at the S speed.
+      case 4: //M4 - start the spindle counterclockwise at the S speed.
+        st_synchronize();
+        WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
+
+        #ifdef MCP41XXX_SELECT_PIN
+          if (code_seen('P'))
+          {
+            uint8_t pwm = (uint8_t)code_value_long();
+            mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 1);
+          }
+        #endif
+
+        break;
+      case 5: //M5 - stop the spindle
+        st_synchronize();
+        WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+        break;
+  #endif
+  #ifdef TACHOMETER_INTERRUPT
+        case 6: //M6 - Get spindle speed
+          SERIAL_ECHO("SPINDLE RPM:");
+          SERIAL_ECHOLN(spindle_rpm_actual);
+          break;
+  #endif
+  #ifdef SPINDLE_COOLANT_PIN
+      case 7: //M7 - turn mist coolant on.
+      case 8: //M8 - turn flood coolant on.
+        st_synchronize();
+        WRITE(SPINDLE_COOLANT_PIN, !INVERT_COOLANT_ON);
+        break;
+      case 9: //M9 - turn all coolant off.
+        WRITE(SPINDLE_COOLANT_PIN, INVERT_COOLANT_ON);
+        break;
+  #endif
+  #ifdef VACUUM_RELAY_PIN
+      case 10: //M10 - turn vacuum on.
+        st_synchronize();
+        WRITE(VACUUM_RELAY_PIN, !INVERT_VACUUM_ON);
+        break;
+      case 11: //M11 - turn vacuum off.
+        st_synchronize();
+        WRITE(VACUUM_RELAY_PIN, INVERT_VACUUM_ON);
+        break;
+  #endif
+      case 17:
+          LCD_MESSAGEPGM(MSG_NO_MOVE);
+          enable_x(); 
+          enable_y(); 
+          enable_z(); 
+          enable_e0(); 
+          enable_e1(); 
+          enable_e2(); 
+>>>>>>> working
+        break;
+      case 115: // M115
+        SERIAL_PROTOCOLPGM(MSG_M115_REPORT);
+        break;
+      case 117: // M117 display message
+        starpos = (strchr(strchr_pointer + 5,'*'));
+        if(starpos!=NULL)
+          *(starpos-1)='\0';
+        lcd_setstatus(strchr_pointer + 5);
+        break;
+      case 114: // M114
+        SERIAL_PROTOCOLPGM("X:");
+        SERIAL_PROTOCOL(current_position[X_AXIS]);
+        SERIAL_PROTOCOLPGM("Y:");
+        SERIAL_PROTOCOL(current_position[Y_AXIS]);
+        SERIAL_PROTOCOLPGM("Z:");
+        SERIAL_PROTOCOL(current_position[Z_AXIS]);
+        SERIAL_PROTOCOLPGM("E:");      
+        SERIAL_PROTOCOL(current_position[E_AXIS]);
+
+        SERIAL_PROTOCOLPGM(MSG_COUNT_X);
+        SERIAL_PROTOCOL(float(st_get_position(X_AXIS))/axis_steps_per_unit[X_AXIS]);
+        SERIAL_PROTOCOLPGM("Y:");
+        SERIAL_PROTOCOL(float(st_get_position(Y_AXIS))/axis_steps_per_unit[Y_AXIS]);
+        SERIAL_PROTOCOLPGM("Z:");
+        SERIAL_PROTOCOL(float(st_get_position(Z_AXIS))/axis_steps_per_unit[Z_AXIS]);
+
+<<<<<<< HEAD
+        SERIAL_PROTOCOLLN("");
+        break;
+      case 120: // M120
+        enable_endstops(false) ;
+        break;
+      case 121: // M121
+        enable_endstops(true) ;
+        break;
+      case 119: // M119
+      SERIAL_PROTOCOLLN(MSG_M119_REPORT);
+        #if (X_MIN_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_X_MIN);
+          SERIAL_PROTOCOLLN(((READ(X_MIN_PIN)^X_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        #if (X_MAX_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_X_MAX);
+          SERIAL_PROTOCOLLN(((READ(X_MAX_PIN)^X_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        #if (Y_MIN_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_Y_MIN);
+          SERIAL_PROTOCOLLN(((READ(Y_MIN_PIN)^Y_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        #if (Y_MAX_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_Y_MAX);
+          SERIAL_PROTOCOLLN(((READ(Y_MAX_PIN)^Y_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        #if (Z_MIN_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_Z_MIN);
+          SERIAL_PROTOCOLLN(((READ(Z_MIN_PIN)^Z_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        #if (Z_MAX_PIN > -1)
+          SERIAL_PROTOCOLPGM(MSG_Z_MAX);
+          SERIAL_PROTOCOLLN(((READ(Z_MAX_PIN)^Z_ENDSTOPS_INVERTING)?MSG_ENDSTOP_HIT:MSG_ENDSTOP_OPEN));
+        #endif
+        break;
+        //TODO: update for all axis, use for loop
+      case 201: // M201
+        for(int8_t i=0; i < NUM_AXIS; i++) 
+        {
+          if(code_seen(axis_codes[i]))
+          {
+            max_acceleration_units_per_sq_second[i] = code_value();
+            axis_steps_per_sqr_second[i] = code_value() * axis_steps_per_unit[i];
+          }
+        }
+        break;
+      #if 0 // Not used for Sprinter/grbl gen6
+      case 202: // M202
+        for(int8_t i=0; i < NUM_AXIS; i++) {
+          if(code_seen(axis_codes[i])) axis_travel_steps_per_sqr_second[i] = code_value() * axis_steps_per_unit[i];
+        }
+        break;
+      #endif
+      case 203: // M203 max feedrate mm/sec
+        for(int8_t i=0; i < NUM_AXIS; i++) {
+          if(code_seen(axis_codes[i])) max_feedrate[i] = code_value();
+        }
+        break;
+      case 204: // M204 acclereration S normal moves T filmanent only moves
+        {
+          if(code_seen('S')) acceleration = code_value() ;
+          if(code_seen('T')) retract_acceleration = code_value() ;
+        }
+        break;
+      case 205: //M205 advanced settings:  minimum travel speed S=while printing T=travel only,  B=minimum segment time X= maximum xy jerk, Z=maximum Z jerk
+      {
+        if(code_seen('S')) minimumfeedrate = code_value();
+        if(code_seen('T')) mintravelfeedrate = code_value();
+        if(code_seen('B')) minsegmenttime = code_value() ;
+        if(code_seen('X')) max_xy_jerk = code_value() ;
+        if(code_seen('Z')) max_z_jerk = code_value() ;
+        if(code_seen('E')) max_e_jerk = code_value() ;
+      }
+      break;
+      case 206: // M206 additional homeing offset
+        for(int8_t i=0; i < 3; i++) 
+        {
+          if(code_seen(axis_codes[i])) add_homeing[i] = code_value();
+        }
+        break;
+      #ifdef FWRETRACT
+      case 207: //M207 - set retract length S[positive mm] F[feedrate mm/sec] Z[additional zlift/hop]
+      {
+        if(code_seen('S')) 
+        {
+          retract_length = code_value() ;
+        }
+        if(code_seen('F')) 
+        {
+          retract_feedrate = code_value() ;
+        }
+        if(code_seen('Z')) 
+        {
+          retract_zlift = code_value() ;
+        }
+      }break;
+      case 208: // M208 - set retract recover length S[positive mm surplus to the M207 S*] F[feedrate mm/sec]
+      {
+        if(code_seen('S')) 
+        {
+=======
+  #ifdef SDSUPPORT
+      case 20: // M20 - list SD card
+        SERIAL_PROTOCOLLNPGM(MSG_BEGIN_FILE_LIST);
+        card.ls();
+        SERIAL_PROTOCOLLNPGM(MSG_END_FILE_LIST);
+        break;
+      case 21: // M21 - init SD card
+
+        card.initsd();
+
+        break;
+      case 22: //M22 - release SD card
+        card.release();
+
+        break;
+      case 23: //M23 - Select file
+        starpos = (strchr(strchr_pointer + 4,'*'));
+        if(starpos!=NULL)
+          *(starpos-1)='\0';
+        card.openFile(strchr_pointer + 4,true);
+        break;
+      case 24: //M24 - Start SD print
+        card.startFileprint();
+        starttime=millis();
+        break;
+      case 25: //M25 - Pause SD print
+        card.pauseSDPrint();
+        break;
+      case 26: //M26 - Set SD index
+        if(card.cardOK && code_seen('S')) {
+          card.setIndex(code_value_long());
+        }
+        break;
+      case 27: //M27 - Get SD status
+        card.getStatus();
+        break;
+      case 28: //M28 - Start SD write
+        starpos = (strchr(strchr_pointer + 4,'*'));
+        if(starpos != NULL){
+          char* npos = strchr(cmdbuffer[bufindr], 'N');
+          strchr_pointer = strchr(npos,' ') + 1;
+          *(starpos-1) = '\0';
+        }
+        card.openFile(strchr_pointer+4,false);
+        break;
+      case 29: //M29 - Stop SD write
+        //processed in write to file routine above
+        //card,saving = false;
+        break;
+      case 30: //M30 <filename> Delete File 
+  	if (card.cardOK){
+  		card.closefile();
+  		starpos = (strchr(strchr_pointer + 4,'*'));
+                  if(starpos != NULL){
+                  char* npos = strchr(cmdbuffer[bufindr], 'N');
+                  strchr_pointer = strchr(npos,' ') + 1;
+                  *(starpos-1) = '\0';
+           }
+  	 card.removeFile(strchr_pointer + 4);
+  	}
+  	break;
+
+  #endif //SDSUPPORT
+
+      case 31: //M31 take time since the start of the SD print or an M109 command
+        {
+        stoptime=millis();
+        char time[30];
+        unsigned long t=(stoptime-starttime)/1000;
+        int sec,min;
+        min=t/60;
+        sec=t%60;
+        sprintf_P(time, PSTR("%i min, %i sec"), min, sec);
+        SERIAL_ECHO_START;
+        SERIAL_ECHOLN(time);
+        lcd_setstatus(time);
+        autotempShutdown();
+        }
+        break;
+      case 42: //M42 -Change pin status via gcode
+        if (code_seen('S'))
+        {
+          int pin_status = code_value();
+          int pin_number = LED_PIN;
+          if (code_seen('P') && pin_status >= 0 && pin_status <= 255)
+            pin_number = code_value();
+          for(int8_t i = 0; i < (int8_t)sizeof(sensitive_pins); i++)
+          {
+            if (sensitive_pins[i] == pin_number)
+            {
+              pin_number = -1;
+              break;
+            }
+          }
+          if (pin_number > -1)
+          {
+            pinMode(pin_number, OUTPUT);
+            digitalWrite(pin_number, pin_status);
+            analogWrite(pin_number, pin_status);
+          }
+        }
+       break;
+      case 104: // M104
+        if(setTargetedHotend(104)){
+          break;
+        }
+        if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+        setWatch();
+        break;
+      case 140: // M140 set bed temp
+        if (code_seen('S')) setTargetBed(code_value());
+        break;
+      case 105 : // M105
+        if(setTargetedHotend(105)){
+          break;
+        }
+        #if (TEMP_0_PIN > -1)
+          SERIAL_PROTOCOLPGM("ok T:");
+          SERIAL_PROTOCOL_F(degHotend(tmp_extruder),1); 
+          SERIAL_PROTOCOLPGM(" /");
+          SERIAL_PROTOCOL_F(degTargetHotend(tmp_extruder),1); 
+          #if TEMP_BED_PIN > -1
+            SERIAL_PROTOCOLPGM(" B:");  
+            SERIAL_PROTOCOL_F(degBed(),1);
+            SERIAL_PROTOCOLPGM(" /");
+            SERIAL_PROTOCOL_F(degTargetBed(),1);
+          #endif //TEMP_BED_PIN
+        #else
+          SERIAL_ERROR_START;
+          SERIAL_ERRORLNPGM(MSG_ERR_NO_THERMISTORS);
+        #endif
+
+          SERIAL_PROTOCOLPGM(" @:");
+          SERIAL_PROTOCOL(getHeaterPower(tmp_extruder));  
+
+          SERIAL_PROTOCOLPGM(" B@:");
+          SERIAL_PROTOCOL(getHeaterPower(-1));  
+
+          SERIAL_PROTOCOLLN("");
+        return false;
+        break;
+      case 109: 
+      {// M109 - Wait for extruder heater to reach target.
+        if(setTargetedHotend(109)){
+          break;
+        }
+        LCD_MESSAGEPGM(MSG_HEATING);   
+        #ifdef AUTOTEMP
+          autotemp_enabled=false;
+        #endif
+        if (code_seen('S')) setTargetHotend(code_value(), tmp_extruder);
+        #ifdef AUTOTEMP
+          if (code_seen('S')) autotemp_min=code_value();
+          if (code_seen('B')) autotemp_max=code_value();
+          if (code_seen('F')) 
+          {
+            autotemp_factor=code_value();
+            autotemp_enabled=true;
+          }
+        #endif
+
+        setWatch();
+        codenum = millis(); 
+
+        /* See if we are heating up or cooling down */
+        bool target_direction = isHeatingHotend(tmp_extruder); // true if heating, false if cooling
+
+        #ifdef TEMP_RESIDENCY_TIME
+          long residencyStart;
+          residencyStart = -1;
+          /* continue to loop until we have reached the target temp   
+            _and_ until TEMP_RESIDENCY_TIME hasn't passed since we reached it */
+          while((residencyStart == -1) ||
+                (residencyStart >= 0 && (((unsigned int) (millis() - residencyStart)) < (TEMP_RESIDENCY_TIME * 1000UL))) ) {
+        #else
+          while ( target_direction ? (isHeatingHotend(tmp_extruder)) : (isCoolingHotend(tmp_extruder)&&(CooldownNoWait==false)) ) {
+        #endif //TEMP_RESIDENCY_TIME
+            if( (millis() - codenum) > 1000UL )
+            { //Print Temp Reading and remaining time every 1 second while heating up/cooling down
+              SERIAL_PROTOCOLPGM("T:");
+              SERIAL_PROTOCOL_F(degHotend(tmp_extruder),1); 
+              SERIAL_PROTOCOLPGM(" E:");
+              SERIAL_PROTOCOL((int)tmp_extruder); 
+              #ifdef TEMP_RESIDENCY_TIME
+                SERIAL_PROTOCOLPGM(" W:");
+                if(residencyStart > -1)
+                {
+                   codenum = ((TEMP_RESIDENCY_TIME * 1000UL) - (millis() - residencyStart)) / 1000UL;
+                   SERIAL_PROTOCOLLN( codenum );
+                }
+                else 
+                {
+                   SERIAL_PROTOCOLLN( "?" );
+                }
+              #else
+                SERIAL_PROTOCOLLN("");
+              #endif
+              codenum = millis();
+            }
+            manage_heater();
+            manage_inactivity();
+            lcd_update();
+          #ifdef TEMP_RESIDENCY_TIME
+              /* start/restart the TEMP_RESIDENCY_TIME timer whenever we reach target temp for the first time
+                or when current temp falls outside the hysteresis after target temp was reached */
+            if ((residencyStart == -1 &&  target_direction && (degHotend(tmp_extruder) >= (degTargetHotend(tmp_extruder)-TEMP_WINDOW))) ||
+                (residencyStart == -1 && !target_direction && (degHotend(tmp_extruder) <= (degTargetHotend(tmp_extruder)+TEMP_WINDOW))) ||
+                (residencyStart > -1 && labs(degHotend(tmp_extruder) - degTargetHotend(tmp_extruder)) > TEMP_HYSTERESIS) ) 
+            {
+              residencyStart = millis();
+            }
+          #endif //TEMP_RESIDENCY_TIME
+          }
+          LCD_MESSAGEPGM(MSG_HEATING_COMPLETE);
+          starttime=millis();
+          previous_millis_cmd = millis();
+        }
+        break;
+      case 190: // M190 - Wait for bed heater to reach target.
+      #if TEMP_BED_PIN > -1
+          LCD_MESSAGEPGM(MSG_BED_HEATING);
+          if (code_seen('S')) setTargetBed(code_value());
+          codenum = millis(); 
+          while(isHeatingBed()) 
+          {
+            if(( millis() - codenum) > 1000 ) //Print Temp Reading every 1 second while heating up.
+            {
+              float tt=degHotend(active_extruder);
+              SERIAL_PROTOCOLPGM("T:");
+              SERIAL_PROTOCOL(tt);
+              SERIAL_PROTOCOLPGM(" E:");
+              SERIAL_PROTOCOL((int)active_extruder); 
+              SERIAL_PROTOCOLPGM(" B:");
+              SERIAL_PROTOCOL_F(degBed(),1); 
+              SERIAL_PROTOCOLLN(""); 
+              codenum = millis(); 
+            }
             manage_heater();
             manage_inactivity();
             lcd_update();
@@ -1605,6 +2253,7 @@ void process_mcode(int codevalue)
       {
         if(code_seen('S')) 
         {
+>>>>>>> working
           retract_recover_length = code_value() ;
         }
         if(code_seen('F')) 
@@ -1873,6 +2522,7 @@ void process_mcode(int codevalue)
         FlushSerialRequestResend();
       break;
       }
+<<<<<<< HEAD
 }
 
 void process_commands()
@@ -1885,6 +2535,27 @@ void process_commands()
   else if(code_seen('M'))
   {
     process_mcode((int)code_value());
+=======
+  
+  return true;
+}
+
+void process_commands()
+{
+  unsigned long codenum; //throw away variable
+  char *starpos = NULL;
+
+  if(code_seen('G'))
+  {
+    lastGMode = (int)code_value();
+    if (!process_gcodes(lastGMode))
+      return;
+  }
+  else if(code_seen('M'))
+  {
+    if (!process_mcodes((int)code_value()))
+      return;
+>>>>>>> working
   }
   else if(code_seen('T')) 
   {
@@ -1904,7 +2575,12 @@ void process_commands()
   }
   else if(code_seen('X') || code_seen('Y') || code_seen('Z')) 
   {
+<<<<<<< HEAD
     process_gcode(lastGMode);
+=======
+    if (!process_gcodes(lastGMode))
+      return;
+>>>>>>> working
   }
   else if(code_seen('F')) {
     next_feedrate = code_value();
@@ -1914,7 +2590,11 @@ void process_commands()
     SERIAL_ECHO_START;
     SERIAL_ECHOPGM("SPINDLE RPM NOT YET IMPLEMENTED");
     SERIAL_ECHOLN(cmdbuffer[bufindr]);
+<<<<<<< HEAD
   }
+=======
+  } 
+>>>>>>> working
   else
   {
     SERIAL_ECHO_START;
