@@ -180,7 +180,7 @@ const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 static float destination[NUM_AXIS] = {  0.0, 0.0, 0.0, 0.0};
 static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
-static float feedrate = 1500.0, next_feedrate, saved_feedrate;
+static float feedrate = 1500.0, next_feedrate, saved_feedrate, g1_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 static int lastGMode = 0;
 
@@ -551,6 +551,8 @@ void get_command()
         comment_parens = false;
         return;
       }
+      MYSERIAL.print("GOT1: ");
+      MYSERIAL.println(cmdbuffer[bufindw]);
       cmdbuffer[bufindw][serial_count] = 0; //terminate string
       if(!comment_mode){
         comment_mode = false; //for new command
@@ -569,6 +571,9 @@ void get_command()
             serial_count = 0;
             return;
           }
+
+          MYSERIAL.print("GOT2: ");
+          MYSERIAL.println(cmdbuffer[bufindw]);
 
           if(strchr(cmdbuffer[bufindw], '*') != NULL)
           {
@@ -646,7 +651,8 @@ void get_command()
         comment_mode = true;
       //if (serial_char == '(')
       //  comment_parens = true;
-      if(!comment_mode && !comment_parens)
+      //if(!comment_mode && !comment_parens)
+      if(!comment_mode)
         cmdbuffer[bufindw][serial_count++] = serial_char;
       //if (serial_char == ')')
       //  comment_parens = false;
@@ -789,10 +795,24 @@ boolean process_gcodes(int code)
   
   switch(code)
   {
-  case 0: // G0 -> G1
-  case 1: // G1
+  case 0: // G0 - max speed move
     if(Stopped == false) {
       get_coordinates(); // For X Y Z E F
+      if (code_seen('X'))
+        feedrate = max_feedrate[0];
+      if (code_seen('Y'))
+        feedrate = max_feedrate[1];
+      if (code_seen('Z'))
+        feedrate = max_feedrate[2];
+      prepare_move();
+      return false;
+    }
+  case 1: // G1 - controlled speed move
+    if(Stopped == false) {
+      get_coordinates(); // For X Y Z E F
+      // if (!code_seen('F'))
+      //   feedrate = g1_feedrate;
+      //g1_feedrate = feedrate;
       prepare_move();
       //ClearToSend();
       return false;
