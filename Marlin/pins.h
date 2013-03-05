@@ -1505,7 +1505,7 @@
   #define SPINDLE_RELAY_PIN      4
   #define INVERT_SPINDLE_ON      0
   #define MCP41XXX_SELECT_PIN   48
-  //#define TACHOMETER_INTERRUPT   0 //this is the interrupt, not the pin according to attachInterrupt
+  #define TACHOMETER_INTERRUPT   0 //this is the interrupt, not the pin according to attachInterrupt
   
   //these are new pins for vacuum relay control
   #define VACUUM_RELAY_PIN    3
