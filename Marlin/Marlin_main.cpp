@@ -187,7 +187,7 @@ static int lastGMode = 0;
 static bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 
 static char cmdbuffer[BUFSIZE][MAX_CMD_SIZE];
-static char comment_string[COMMENT_SIZE];
+static char comment_string[BUFSIZE][COMMENT_SIZE];
 static byte comment_index = 0;
 
 static bool fromsd[BUFSIZE];
@@ -602,6 +602,36 @@ boolean validate_command()
   return true;
 }
 
+void extract_command_comments()
+{
+  //pull out comments in () because its included in the checksum.
+  for (int i=0; i<serial_count; i++)
+  {
+    serial_char = cmdbuffer[bufindw][i];
+    if (serial_char == '(' || serial_char == ';')
+    {
+      comment_mode = true;
+      cmdbuffer[bufindw][i] = ' ';
+    }
+    else if (serial_char == ')')
+    {
+      comment_mode = false;
+      cmdbuffer[bufindw][i] = ' ';
+    }
+    else if (comment_mode)
+    {
+      //add it to our comment string
+      if (comment_index < COMMENT_SIZE)
+        comment_string[bufindw][comment_index++] = serial_char;
+      
+      //comment mode, nuke the character
+      cmdbuffer[bufindw][i] = ' ';
+    }
+  }
+  //terminate comment
+  comment_string[bufindw][comment_index] = 0;
+}
+
 void get_command() 
 {
   //pull in characters while we got 'em.
@@ -615,22 +645,40 @@ void get_command()
     {
       //if empty line, bail.
       if(!serial_count)
+      {
+        MYSERIAL.println("EMTPY LINE.");
         return;
+      }
 
-      //terminate strings.
+      //terminate command string.
       cmdbuffer[bufindw][serial_count] = 0;
-      comment_string[comment_index] = 0;
-      
+
       //not sure what this does.
-      fromsd[bufindw] = false;
+      //fromsd[bufindw] = false;
       
       //validate our command to make sure its okay.
       if (!validate_command())
       {
         FlushSerialRequestResend();
         serial_count = 0;
+        comment_index = 0;
+        comment_mode = false;        
         return;
       }
+      
+      //pull out our comments for later use
+      extract_command_comments();
+      
+      //check for empty lines...
+      
+      //debug crap.
+      //MYSERIAL.print("got: ");
+      //MYSERIAL.println(cmdbuffer[bufindw]);
+      //if (comment_index > 0)
+      //{
+      //  MYSERIAL.print("// ");
+      //  MYSERIAL.println(comment_string[bufindw]);
+      //}
 
       //umm, this is really weird... why are we dealing with gcodes in the command buffering code!?!?
       if((strchr(cmdbuffer[bufindw], 'G') != NULL))
@@ -671,16 +719,11 @@ void get_command()
     }
     else
     {
-      //extra fancy handling to put comment in its own string.
-      if (comment_mode)
-      {
-        if (comment_index < COMMENT_SIZE)
-          comment_string[comment_index++] = serial_char;
-      }
-      else if(serial_char == ';' || serial_char == '(')
+      //MYSERIAL.println(serial_char);
+      
+      //strip the ; style comments before 
+      if(serial_char == ';')
         comment_mode = true;
-      else if (serial_char = ')')
-        comment_mode = false;
       else if(!comment_mode)
         cmdbuffer[bufindw][serial_count++] = serial_char;
     }
@@ -688,53 +731,53 @@ void get_command()
   
   //this is SD card printing stuff....
   #ifdef SDSUPPORT
-  if(!card.sdprinting || serial_count!=0){
-    return;
-  }
-  while( !card.eof()  && buflen < BUFSIZE) {
-    int16_t n=card.get();
-    serial_char = (char)n;
-    if(serial_char == '\n' || 
-       serial_char == '\r' || 
-       (serial_char == ':' && comment_mode == false) || 
-       serial_count >= (MAX_CMD_SIZE - 1)||n==-1) 
-    {
-      if(card.eof()){
-        SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
-        stoptime=millis();
-        char time[30];
-        unsigned long t=(stoptime-starttime)/1000;
-        int hours, minutes;
-        minutes=(t/60)%60;
-        hours=t/60/60;
-        sprintf_P(time, PSTR("%i hours %i minutes"),hours, minutes);
-        SERIAL_ECHO_START;
-        SERIAL_ECHOLN(time);
-        lcd_setstatus(time);
-        card.printingHasFinished();
-        card.checkautostart(true);
-        
-      }
-      if(!serial_count)
+    if(!card.sdprinting || serial_count!=0){
+      return;
+    }
+    while( !card.eof()  && buflen < BUFSIZE) {
+      int16_t n=card.get();
+      serial_char = (char)n;
+      if(serial_char == '\n' || 
+         serial_char == '\r' || 
+         (serial_char == ':' && comment_mode == false) || 
+         serial_count >= (MAX_CMD_SIZE - 1)||n==-1) 
       {
+        if(card.eof()){
+          SERIAL_PROTOCOLLNPGM(MSG_FILE_PRINTED);
+          stoptime=millis();
+          char time[30];
+          unsigned long t=(stoptime-starttime)/1000;
+          int hours, minutes;
+          minutes=(t/60)%60;
+          hours=t/60/60;
+          sprintf_P(time, PSTR("%i hours %i minutes"),hours, minutes);
+          SERIAL_ECHO_START;
+          SERIAL_ECHOLN(time);
+          lcd_setstatus(time);
+          card.printingHasFinished();
+          card.checkautostart(true);
+        
+        }
+        if(!serial_count)
+        {
+          comment_mode = false; //for new command
+          return; //if empty line
+        }
+        cmdbuffer[bufindw][serial_count] = 0; //terminate string
+  //      if(!comment_mode){
+          fromsd[bufindw] = true;
+          buflen += 1;
+          bufindw = (bufindw + 1)%BUFSIZE;
+  //      }     
         comment_mode = false; //for new command
-        return; //if empty line
+        serial_count = 0; //clear buffer
       }
-      cmdbuffer[bufindw][serial_count] = 0; //terminate string
-//      if(!comment_mode){
-        fromsd[bufindw] = true;
-        buflen += 1;
-        bufindw = (bufindw + 1)%BUFSIZE;
-//      }     
-      comment_mode = false; //for new command
-      serial_count = 0; //clear buffer
+      else
+      {
+        if(serial_char == ';') comment_mode = true;
+        if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
+      }
     }
-    else
-    {
-      if(serial_char == ';') comment_mode = true;
-      if(!comment_mode) cmdbuffer[bufindw][serial_count++] = serial_char;
-    }
-  }
   #endif //SDSUPPORT
 }
 
