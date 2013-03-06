@@ -602,9 +602,13 @@ boolean validate_command()
   return true;
 }
 
-void extract_command_comments()
+boolean extract_command_comments()
 {
   //pull out comments in () because its included in the checksum.
+  boolean empty = true;
+  boolean found = false;
+  char empty_chars[17] = "(); 1234567890*N";
+  
   for (int i=0; i<serial_count; i++)
   {
     serial_char = cmdbuffer[bufindw][i];
@@ -627,9 +631,28 @@ void extract_command_comments()
       //comment mode, nuke the character
       cmdbuffer[bufindw][i] = ' ';
     }
+    //okay, see if we got a character other than the ones we'd find in an empty string.
+    else if (empty)
+    {
+      found = false;
+      for (int j=0; j<16; j++)
+      {
+        if (serial_char == empty_chars[j])
+        {
+          found = true;
+          break;
+        }
+      }
+      
+      //if its not in our list of comment characters, then we're not empty.
+      if (!found)
+        empty = false;
+    }
   }
   //terminate comment
   comment_string[bufindw][comment_index] = 0;
+  
+  return !empty;
 }
 
 void get_command() 
@@ -667,9 +690,15 @@ void get_command()
       }
       
       //pull out our comments for later use
-      extract_command_comments();
-      
-      //check for empty lines...
+      if (!extract_command_comments())
+      {
+        //a false means it was totally a comment / now empty
+        serial_count = 0;
+        comment_index = 0;
+        comment_mode = false;        
+        ClearToSend();
+        return;
+      }
       
       //debug crap.
       //MYSERIAL.print("got: ");
@@ -713,7 +742,9 @@ void get_command()
       //awesome, we're good... move on to the next buffer item.
       bufindw = (bufindw + 1)%BUFSIZE;
       buflen += 1;
-      serial_count = 0; //clear buffer
+      
+      //reset our variables for the next incoming command.
+      serial_count = 0;
       comment_mode = false;
       comment_index = 0;
     }
