@@ -180,7 +180,7 @@ const char axis_codes[NUM_AXIS] = {'X', 'Y', 'Z', 'E'};
 static float destination[NUM_AXIS] = {  0.0, 0.0, 0.0, 0.0};
 static float offset[3] = {0.0, 0.0, 0.0};
 static bool home_all_axis = true;
-static float feedrate = 1500.0, next_feedrate, saved_feedrate;
+static float feedrate = 1500.0, next_feedrate, saved_feedrate, g1_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 static int lastGMode = 0;
 
@@ -866,26 +866,44 @@ boolean process_gcodes(int code)
   switch(code)
   {
   case 0: // G0 -> G1
-  case 1: // G1
-    if(Stopped == false) {
+    if(Stopped == false)
+    {
       get_coordinates(); // For X Y Z E F
+      if (code_seen('X'))
+        feedrate = max_feedrate[0];
+      if (code_seen('Y'))
+        feedrate = max_feedrate[1];
+      if (code_seen('Z'))
+        feedrate = max_feedrate[2];
       prepare_move();
-      //ClearToSend();
       return false;
     }
-    //break;
+    break;
+  case 1: // G1
+    if(Stopped == false)
+    {
+      get_coordinates(); // For X Y Z E F
+      if (code_seen('F'))
+        g1_feedrate = code_value();
+      feedrate = g1_feedrate;
+      prepare_move();
+      return false;
+    }
+    break;
   case 2: // G2  - CW ARC
     if(Stopped == false) {
       get_arc_coordinates();
       prepare_arc_move(true);
       return false;
     }
+    break;
   case 3: // G3  - CCW ARC
     if(Stopped == false) {
       get_arc_coordinates();
       prepare_arc_move(false);
       return false;
     }
+    break;
   case 4: // G4 dwell
     LCD_MESSAGEPGM(MSG_DWELL);
     codenum = 0;
@@ -1946,8 +1964,7 @@ void process_commands()
       return;
   }
   else if(code_seen('F')) {
-    next_feedrate = code_value();
-    if(next_feedrate > 0.0) feedrate = next_feedrate;
+    g1_feedrate = code_value();
   }
   else if(code_seen('S')) {
     SERIAL_ECHO_START;
@@ -1995,10 +2012,10 @@ void get_coordinates()
     }
     else destination[i] = current_position[i]; //Are these else lines really needed?
   }
-  if(code_seen('F')) {
-    next_feedrate = code_value();
-    if(next_feedrate > 0.0) feedrate = next_feedrate;
-  }
+  // if(code_seen('F')) {
+  //   next_feedrate = code_value();
+  //   if(next_feedrate > 0.0) feedrate = next_feedrate;
+  // }
   #ifdef FWRETRACT
   if(autoretract_enabled)
   if( !(seen[X_AXIS] || seen[Y_AXIS] || seen[Z_AXIS]) && seen[E_AXIS])
