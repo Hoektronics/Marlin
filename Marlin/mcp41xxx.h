@@ -30,3 +30,4 @@ uint8_t mcp41xxx_shutdown(uint8_t cs_pin, bool pot0, bool pot1);
 uint8_t mcp41xxx_get_wiper_position(int total_resistance, int resistance_aw);
   
 #endif
+

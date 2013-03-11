@@ -62,3 +62,4 @@ uint8_t mcp41xxx_get_wiper_position(int total_resistance, int resistance_aw)
   
   return 256 - ((resistance_aw * 256) / total_resistance);
 }
+
