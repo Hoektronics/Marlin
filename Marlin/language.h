@@ -25,9 +25,9 @@
 #if MOTHERBOARD == 7 || MOTHERBOARD == 71
 	#define MACHINE_NAME "Ultimaker"
 	#define FIRMWARE_URL "http://firmware.ultimaker.com"
-#else
-	#define MACHINE_NAME "Mendel"
-	#define FIRMWARE_URL "http://www.mendel-parts.com"
+#elif MOTHERBOARD == 100
+	#define MACHINE_NAME "Xiaokong"
+	#define FIRMWARE_URL "http://www.hoektronics.com"
 #endif
 
 #define STRINGIFY_(n) #n

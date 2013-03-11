@@ -167,30 +167,34 @@ static void lcd_implementation_status_screen()
 {
     int tHotend=int(degHotend(0) + 0.5);
     int tTarget=int(degTargetHotend(0) + 0.5);
+    int tach = get_tachometer_speed();
 
 #if LCD_WIDTH < 20
     lcd.setCursor(0, 0);
-    lcd.print(itostr3(tHotend));
-    lcd.print('/');
-    lcd.print(itostr3left(tTarget));
-
-# if EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
-    //If we have an 2nd extruder or heated bed, show that in the top right corner
-    lcd.setCursor(8, 0);
-#  if EXTRUDERS > 1
-    tHotend = int(degHotend(1) + 0.5);
-    tTarget = int(degTargetHotend(1) + 0.5);
-    lcd.print(LCD_STR_THERMOMETER[0]);
-#  else//Heated bed
-    tHotend=int(degBed() + 0.5);
-    tTarget=int(degTargetBed() + 0.5);
-    lcd.print(LCD_STR_BEDTEMP[0]);
-#  endif
-    lcd.print(itostr3(tHotend));
-    lcd.print('/');
-    lcd.print(itostr3left(tTarget));
-# endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
-
+    #if MACHINE_TYPE == 0
+      lcd.print(itostr3(tHotend));
+      lcd.print('/');
+      lcd.print(itostr3left(tTarget));
+      # if EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+          //If we have an 2nd extruder or heated bed, show that in the top right corner
+          lcd.setCursor(8, 0);
+      #  if EXTRUDERS > 1
+          tHotend = int(degHotend(1) + 0.5);
+          tTarget = int(degTargetHotend(1) + 0.5);
+          lcd.print(LCD_STR_THERMOMETER[0]);
+      #  else//Heated bed
+          tHotend=int(degBed() + 0.5);
+          tTarget=int(degTargetBed() + 0.5);
+          lcd.print(LCD_STR_BEDTEMP[0]);
+      #  endif
+          lcd.print(itostr3(tHotend));
+          lcd.print('/');
+          lcd.print(itostr3left(tTarget));
+      # endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
+    #elif MACHINE_TYPE == 1
+          lcd.print("RPM: ");
+          lcd.print(itostr5left(tach));
+    #endif
 #else//LCD_WIDTH > 19
     lcd.setCursor(0, 0);
     lcd.print(LCD_STR_THERMOMETER[0]);

@@ -1,5 +1,6 @@
 #include "temperature.h"
 #include "ultralcd.h"
+#include "tachometer.h"
 #ifdef ULTRA_LCD
 #include "Marlin.h"
 #include "language.h"
@@ -985,6 +986,110 @@ char *itostr4(const int &xx)
     conv[2]=' ';
   conv[3]=(xx)%10+'0';
   conv[4]=0;
+  return conv;
+}
+
+char *itostr4left(const int &xx)
+{
+  if (xx >= 1000)
+  {
+    conv[0]=(xx/1000)%10+'0';
+    conv[1]=(xx/100)%10+'0';
+    conv[2]=(xx/10)%10+'0';
+    conv[3]=(xx)%10+'0';
+    conv[4]=0;
+  }
+  else if (xx >= 100)
+  {
+    conv[0]=(xx/100)%10+'0';
+    conv[1]=(xx/10)%10+'0';
+    conv[2]=(xx)%10+'0';
+    conv[3]=0;
+  }
+  else if (xx >= 10)
+  {
+    conv[0]=(xx/10)%10+'0';
+    conv[1]=(xx)%10+'0';
+    conv[2]=0;
+  }
+  else
+  {
+    conv[0]=(xx)%10+'0';
+    conv[1]=0;
+  }
+  return conv;
+}
+
+char *itostr5(const int &xx)
+{
+  if (xx >= 10000)
+    conv[0]=(xx/10000)%10+'0';
+  else
+    conv[0]=' ';
+  if (xx >= 1000)
+    conv[1]=(xx/1000)%10+'0';
+  else
+    conv[1]=' ';
+  if (xx >= 100)
+    conv[2]=(xx/100)%10+'0';
+  else
+    conv[2]=' ';
+  if (xx >= 10)
+    conv[3]=(xx/10)%10+'0';
+  else
+    conv[3]=' ';
+  conv[4]=(xx)%10+'0';
+  conv[5]=0;
+  return conv;
+}
+
+char *itostr5left(const int &xx)
+{
+  if (xx >= 10000)
+  {
+    conv[0]=(xx/10000)%10+'0';
+    conv[1]=(xx/1000)%10+'0';
+    conv[2]=(xx/100)%10+'0';
+    conv[3]=(xx/10)%10+'0';
+    conv[4]=(xx)%10+'0';
+    conv[5]=0;
+  }
+  else if (xx >= 1000)
+  {
+    conv[0]=(xx/1000)%10+'0';
+    conv[1]=(xx/100)%10+'0';
+    conv[2]=(xx/10)%10+'0';
+    conv[3]=(xx)%10+'0';
+    conv[4] = ' ';
+    conv[5]=0;
+  }
+  else if (xx >= 100)
+  {
+    conv[0]=(xx/100)%10+'0';
+    conv[1]=(xx/10)%10+'0';
+    conv[2]=(xx)%10+'0';
+    conv[3] = ' ';
+    conv[4] = ' ';
+    conv[5]=0;
+  }
+  else if (xx >= 10)
+  {
+    conv[0]=(xx/10)%10+'0';
+    conv[1]=(xx)%10+'0';
+    conv[2] = ' ';
+    conv[3] = ' ';
+    conv[4] = ' ';
+    conv[5]=0;
+  }
+  else
+  {
+    conv[0]=(xx)%10+'0';
+    conv[1] = ' ';
+    conv[2] = ' ';
+    conv[3] = ' ';
+    conv[4] = ' ';
+    conv[5]=0;
+  }
   return conv;
 }
 

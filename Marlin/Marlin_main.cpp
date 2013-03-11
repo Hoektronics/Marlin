@@ -40,6 +40,7 @@
 #include "language.h"
 #include "pins_arduino.h"
 #include "mcp41xxx.h"
+#include "tachometer.h"
 
 #if DIGIPOTSS_PIN > -1
 #include <SPI.h>
@@ -183,6 +184,7 @@ static bool home_all_axis = true;
 static float feedrate = 1500.0, next_feedrate, saved_feedrate, g1_feedrate;
 static long gcode_N, gcode_LastN, Stopped_gcode_LastN = 0;
 static int lastGMode = 0;
+int foo = 1;
 
 static bool relative_mode = false;  //Determines Absolute or Relative Coordinates
 
@@ -309,56 +311,6 @@ void setup_powerhold()
    #endif
  #endif
 }
-
-volatile unsigned long current_tachometer_pulse = 0;
-volatile unsigned long temp_last_tachometer_pulse = 0;
-volatile unsigned long last_tachometer_pulse = 0;
-volatile int spindle_rpm_running[3] = {0, 0, 0};
-volatile int spindle_rpm_actual = 0;
-//volatile unsigned long spindle_rpm_target = 0;
-
-#define TACH_PULSE_MICROS 60000000
-
-void tachometer_increment()
-{
-  current_tachometer_pulse = micros();
-  spindle_rpm_running[2] = spindle_rpm_running[1];
-  spindle_rpm_running[1] = spindle_rpm_running[0];
-  spindle_rpm_running[0] = TACH_PULSE_MICROS / (current_tachometer_pulse - last_tachometer_pulse);
-  last_tachometer_pulse = current_tachometer_pulse;
-
-  //the interrupts are being strange and triggering too soon sometimes.  this is a hack to pull out any strange values.
-  int ab = abs(spindle_rpm_running[0] - spindle_rpm_running[1]);
-  int ac = abs(spindle_rpm_running[0] - spindle_rpm_running[2]);
-  int bc = abs(spindle_rpm_running[1] - spindle_rpm_running[2]);
-  int minimum = min(ab, min(ac, bc));
-  
-  if (ab == minimum)
-    spindle_rpm_actual = (spindle_rpm_running[0] + spindle_rpm_running[1])/2;
-  else if (ac == minimum)
-    spindle_rpm_actual = (spindle_rpm_running[0] + spindle_rpm_running[2])/2;
-  else
-    spindle_rpm_actual = (spindle_rpm_running[1] + spindle_rpm_running[2])/2;
-}
-
-void setup_spindle()
-{
-  #ifdef SPINDLE_RELAY_PIN
-    SET_OUTPUT(SPINDLE_RELAY_PIN);
-    WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
-    
-    #ifdef MCP41XXX_SELECT_PIN
-      mcp41xxx_init(MCP41XXX_SELECT_PIN);
-      SET_OUTPUT(MCP41XXX_SELECT_PIN);
-      WRITE(MCP41XXX_SELECT_PIN, HIGH);
-    #endif
-    
-    #ifdef TACHOMETER_INTERRUPT
-      attachInterrupt(TACHOMETER_INTERRUPT, tachometer_increment, RISING);
-    #endif
-  #endif
-}
-
 
 void setup_vacuum()
 {
@@ -1173,7 +1125,7 @@ boolean process_mcodes(int code)
   #ifdef TACHOMETER_INTERRUPT
         case 6: //M6 - Get spindle speed
           SERIAL_ECHO("SPINDLE RPM:");
-          SERIAL_ECHOLN(spindle_rpm_actual);
+          SERIAL_ECHOLN(get_tachometer_speed());
           break;
   #endif
   #ifdef SPINDLE_COOLANT_PIN
