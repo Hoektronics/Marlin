@@ -1477,13 +1477,35 @@
   #define E1_DIR_PIN         46
   #define E1_ENABLE_PIN      47
 
-  #define LCD_PINS_RS         9
-  #define LCD_PINS_ENABLE    10
-  #define LCD_PINS_D4        23
-  #define LCD_PINS_D5        22
-  #define LCD_PINS_D6        12
-  #define LCD_PINS_D7        11
   #define BEEPER              5
+  
+  //okay, we've got a CNC LCD here
+  #ifdef ULTRA_LCD
+    #define LCD_PINS_RS         9
+    #define LCD_PINS_ENABLE    10
+    #define LCD_PINS_D4        23
+    #define LCD_PINS_D5        22
+    #define LCD_PINS_D6        12
+    #define LCD_PINS_D7        11
+
+    #define OK_PIN             24            
+    #define CANCEL_PIN         14
+    #define MENU_PIN           15
+    
+    #define BTN_EN1 14
+    #define BTN_EN2 15
+    #define BTN_ENC 24  //the click / ok
+    
+    #define BLEN_C 2
+    #define BLEN_B 1
+    #define BLEN_A 0
+    
+    #define encrot0 0
+    #define encrot1 2
+    #define encrot2 3
+    #define encrot3 1
+    
+  #endif //ULTRA_LCD
 
   #define SDPOWER            -1
   #define SDSS               49
@@ -1512,7 +1534,6 @@
   #define INVERT_VACUUM_ON    0
   
   //new pins for extra switches
-  #define PLAY_PIN     25
   //#define DOOR_SWITCH_PIN     25
   //#define TOOL_ZERO_PIN       26
   
@@ -1520,6 +1541,7 @@
   #define LED_RED_PIN         7
   #define LED_GREEN_PIN       6
   #define LED_BLUE_PIN        8
+  
 #endif
 
 #ifndef KNOWN_BOARD
@@ -1580,3 +1602,4 @@
                         _E0_PINS _E1_PINS _E2_PINS             \
                         analogInputToDigitalPin(TEMP_0_PIN), analogInputToDigitalPin(TEMP_1_PIN), analogInputToDigitalPin(TEMP_2_PIN), analogInputToDigitalPin(TEMP_BED_PIN) }
 #endif
+

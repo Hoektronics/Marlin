@@ -45,7 +45,7 @@
 #include <SPI.h>
 #endif
 
-#define VERSION_STRING  "1.0.0"
+#define VERSION_STRING  "1.1.0"
 
 // look here for descriptions of gcodes: http://linuxcnc.org/handbook/gcode/g-code.html
 // http://objects.reprap.org/wiki/Mendel_User_Manual:_RepRapGCodes
@@ -949,6 +949,7 @@ boolean process_gcodes(int code)
       manage_inactivity();
       lcd_update();
     }
+    LCD_MESSAGEPGM(MSG_RESUMING);
     break;
     #ifdef FWRETRACT  
     case 10: // G10 retract
@@ -1108,16 +1109,30 @@ boolean process_mcodes(int code)
       case 0: // M0 - Unconditional stop - Wait for user button press on LCD
       case 1: // M1 - Conditional stop - Wait for user button press on LCD
       {
-        LCD_MESSAGEPGM(MSG_USERWAIT);
+        st_synchronize();
+
+        //print our comment if we got it!
+        if (comment_string[bufindr][0]){ 
+          MYSERIAL.println(comment_string[bufindr]);
+          lcd_setstatus(comment_string[bufindr]);
+        }else{
+          MYSERIAL.println(MSG_USERWAIT);
+          LCD_MESSAGEPGM(MSG_USERWAIT);
+        }
+
+        lcd_force_update();
+        
+        //did we get a timeout?
         codenum = 0;
         if(code_seen('P')) codenum = code_value(); // milliseconds to wait
         if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
 
-        st_synchronize();
+        //okay, do our waiting.
         previous_millis_cmd = millis();
-        if (codenum > 0){
+        if (codenum > 0) 
+        {
           codenum += millis();  // keep track of when we started waiting
-          while(millis()  < codenum && !LCD_CLICKED){
+          while(millis() < codenum && !LCD_CLICKED){
             manage_heater();
             manage_inactivity();
             lcd_update();
@@ -1129,36 +1144,9 @@ boolean process_mcodes(int code)
             lcd_update();
           }
         }
+        delay(250);
         LCD_MESSAGEPGM(MSG_RESUMING);
-      }
-      break;
-  #endif
-  #ifdef PLAY_PIN
-      case 0: // M0 - Unconditional stop - Wait for user button press on LCD
-      case 1: // M1 - Conditional stop - Wait for user button press on LCD
-      {
-        LCD_MESSAGEPGM(MSG_USERWAIT);
-        codenum = 0;
-        if(code_seen('P')) codenum = code_value(); // milliseconds to wait
-        if(code_seen('S')) codenum = code_value() * 1000; // seconds to wait
-
-        st_synchronize();
-        previous_millis_cmd = millis();
-        if (codenum > 0){
-          codenum += millis();  // keep track of when we started waiting
-          while(millis()  < codenum && digitalRead(PLAY_PIN)){
-            manage_heater();
-            manage_inactivity();
-            lcd_update();
-          }
-        }else{
-          while(digitalRead(PLAY_PIN)){
-            manage_heater();
-            manage_inactivity();
-            lcd_update();
-          }
-        }
-        LCD_MESSAGEPGM(MSG_RESUMING);
+        lcd_force_update();
       }
       break;
   #endif
@@ -1365,6 +1353,7 @@ boolean process_mcodes(int code)
           break;
         }
         LCD_MESSAGEPGM(MSG_HEATING);   
+        lcd_force_update();
         #ifdef AUTOTEMP
           autotemp_enabled=false;
         #endif
@@ -2365,3 +2354,4 @@ bool setTargetedHotend(int code){
   }
   return false;
 }
+

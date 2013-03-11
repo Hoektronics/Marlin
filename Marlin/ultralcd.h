@@ -6,6 +6,7 @@
 #ifdef ULTRA_LCD
 
   void lcd_update();
+  void lcd_force_update();
   void lcd_init();
   void lcd_setstatus(const char* message);
   void lcd_setstatuspgm(const char* message);
@@ -78,3 +79,4 @@ char *ftostr51(const float &x);
 char *ftostr52(const float &x);
 
 #endif //ULTRALCD
+
