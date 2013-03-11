@@ -31,7 +31,7 @@ unsigned int get_tachometer_speed()
   unsigned long elapsed = micros() - last_tachometer_time;
   unsigned int pulses = tachometer_pulse_count;
 
-  if (elapsed > 1000000)
+  if (elapsed > 500000)
   {
     if (tachometer_pulse_count == 0)
       spindle_rpm_current = 0;
