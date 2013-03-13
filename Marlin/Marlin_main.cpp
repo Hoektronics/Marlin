@@ -1102,24 +1102,47 @@ boolean process_mcodes(int code)
       }
       break;
   #endif
-  #ifdef SPINDLE_RELAY_PIN
+  #ifdef HAS_SPINDLE
       case 3: //M3 - start the spindle clockwise at the S speed.
       case 4: //M4 - start the spindle counterclockwise at the S speed.
         st_synchronize();
-        WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
-
-        #ifdef MCP41XXX_SELECT_PIN
-          if (code_seen('P'))
-          {
-            uint8_t pwm = (uint8_t)code_value_long();
-            mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 1);
-          }
-        #endif
+        
+        //what about speed settings?
+        if (code_seen('S'))
+        {
+          set_tachometer_target((int)code_value_long());
+        }
+        else if (code_seen('P'))
+        {
+          uint8_t pwm = (uint8_t)code_value_long();
+          #ifdef MCP41XXX_SELECT_PIN
+              mcp41xxx_write(MCP41XXX_SELECT_PIN, pwm, 1, 1);
+          #endif
+          #ifdef SPINDLE_PWM_PIN
+              analogWrite(SPINDLE_PWM_PIN, pwm);
+          #endif
+        }
+        
+        //okay, turn it on.
+        spindle_on = true;
+        #ifdef SPINDLE_RELAY_PIN
+          WRITE(SPINDLE_RELAY_PIN, !INVERT_SPINDLE_ON);
+        #endif        
 
         break;
       case 5: //M5 - stop the spindle
         st_synchronize();
-        WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+        
+        spindle_on = false;
+
+        #ifdef SPINDLE_RELAY_PIN
+          WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
+        #endif
+
+        #ifdef SPINDLE_PWM_PIN
+            analogWrite(SPINDLE_PWM_PIN, 0);
+        #endif
+        
         break;
   #endif
   #ifdef TACHOMETER_INTERRUPT
@@ -1939,9 +1962,7 @@ void process_commands()
     g1_feedrate = code_value();
   }
   else if(code_seen('S')) {
-    SERIAL_ECHO_START;
-    SERIAL_ECHOPGM("SPINDLE RPM NOT YET IMPLEMENTED");
-    SERIAL_ECHOLN(cmdbuffer[bufindr]);
+    set_tachometer_target((int)code_value_long());
   } 
   else
   {

@@ -24,7 +24,19 @@
 
 volatile unsigned int tachometer_pulse_count;
 unsigned int spindle_rpm_current = 0;
+unsigned int spindle_rpm_target = 0;
 unsigned long last_tachometer_time;
+boolean spindle_on = false;
+
+unsigned int get_tachometer_target()
+{
+  return spindle_rpm_target;
+}
+
+void set_tachometer_target(unsigned int target)
+{
+  spindle_rpm_target = target;
+}
 
 unsigned int get_tachometer_speed()
 {
@@ -60,15 +72,25 @@ void setup_spindle()
   #ifdef SPINDLE_RELAY_PIN
     SET_OUTPUT(SPINDLE_RELAY_PIN);
     WRITE(SPINDLE_RELAY_PIN, INVERT_SPINDLE_ON);
-    
-    #ifdef MCP41XXX_SELECT_PIN
-      mcp41xxx_init(MCP41XXX_SELECT_PIN);
-      SET_OUTPUT(MCP41XXX_SELECT_PIN);
-      WRITE(MCP41XXX_SELECT_PIN, HIGH);
-    #endif
-    
-    #ifdef TACHOMETER_INTERRUPT
-      attachInterrupt(TACHOMETER_INTERRUPT, tachometer_increment, RISING);
-    #endif
   #endif
+
+  #ifdef SPINDLE_PWM_PIN
+    SET_OUTPUT(SPINDLE_PWM_PIN);
+    analogWrite(SPINDLE_PWM_PIN, 0);
+  #endif
+    
+  #ifdef MCP41XXX_SELECT_PIN
+    mcp41xxx_init(MCP41XXX_SELECT_PIN);
+    SET_OUTPUT(MCP41XXX_SELECT_PIN);
+    WRITE(MCP41XXX_SELECT_PIN, HIGH);
+  #endif
+  
+  #ifdef TACHOMETER_INTERRUPT
+    attachInterrupt(TACHOMETER_INTERRUPT, tachometer_increment, RISING);
+  #endif
+}
+
+void manage_spindle()
+{
+  return;
 }

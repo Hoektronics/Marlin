@@ -1093,6 +1093,47 @@ char *itostr5left(const int &xx)
   return conv;
 }
 
+char *itostr(const int &xx)
+{
+  if (xx >= 10000)
+  {
+    conv[0]=(xx/10000)%10+'0';
+    conv[1]=(xx/1000)%10+'0';
+    conv[2]=(xx/100)%10+'0';
+    conv[3]=(xx/10)%10+'0';
+    conv[4]=(xx)%10+'0';
+    conv[5]=0;
+  }
+  else if (xx >= 1000)
+  {
+    conv[0]=(xx/1000)%10+'0';
+    conv[1]=(xx/100)%10+'0';
+    conv[2]=(xx/10)%10+'0';
+    conv[3]=(xx)%10+'0';
+    conv[4]=0;
+  }
+  else if (xx >= 100)
+  {
+    conv[0]=(xx/100)%10+'0';
+    conv[1]=(xx/10)%10+'0';
+    conv[2]=(xx)%10+'0';
+    conv[3]=0;
+  }
+  else if (xx >= 10)
+  {
+    conv[0]=(xx/10)%10+'0';
+    conv[1]=(xx)%10+'0';
+    conv[2]=0;
+  }
+  else
+  {
+    conv[0]=(xx)%10+'0';
+    conv[1]=0;
+  }
+  return conv;
+}
+
+
 //  convert float to string with 12345 format
 char *ftostr5(const float &x)
 {

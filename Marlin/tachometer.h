@@ -24,11 +24,18 @@
 #include "Marlin.h"
 
 extern volatile unsigned int tachometer_pulse_count;
+extern unsigned int spindle_rpm_current;
+extern unsigned int spindle_rpm_target;
+extern boolean spindle_on;
+
 
 #define TACH_PULSE_MICROS 60000000
 
 unsigned int get_tachometer_speed();
+unsigned int get_tachometer_target();
+void set_tachometer_target(unsigned int target);
 void setup_spindle();
+void manage_spindle();
 
 FORCE_INLINE void tachometer_increment()
 {

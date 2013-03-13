@@ -168,6 +168,7 @@ static void lcd_implementation_status_screen()
     int tHotend=int(degHotend(0) + 0.5);
     int tTarget=int(degTargetHotend(0) + 0.5);
     int tach = get_tachometer_speed();
+    int tachTarget = get_tachometer_target();
 
 #if LCD_WIDTH < 20
     lcd.setCursor(0, 0);
@@ -193,7 +194,9 @@ static void lcd_implementation_status_screen()
       # endif//EXTRUDERS > 1 || TEMP_SENSOR_BED != 0
     #elif MACHINE_TYPE == 1
           lcd.print("RPM: ");
-          lcd.print(itostr5left(tach));
+          lcd.print(itostr(tach));
+          lcd.print('/');
+          lcd.print(itostr(tachTarget));
     #endif
 #else//LCD_WIDTH > 19
     lcd.setCursor(0, 0);

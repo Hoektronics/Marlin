@@ -1524,7 +1524,9 @@
   #define TEMP_BED_PIN       -1   // ANALOG NUMBERING
 
   //these are new pins for spindle control
-  #define SPINDLE_RELAY_PIN      4
+  #define HAS_SPINDLE
+  //#define SPINDLE_RELAY_PIN      4
+  #define SPINDLE_PWM_PIN      4
   #define INVERT_SPINDLE_ON      0
   #define MCP41XXX_SELECT_PIN   48
   #define TACHOMETER_INTERRUPT   0 //this is the interrupt, not the pin according to attachInterrupt
