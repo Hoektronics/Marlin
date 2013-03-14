@@ -36,6 +36,7 @@ unsigned int get_tachometer_target();
 void set_tachometer_target(unsigned int target);
 void setup_spindle();
 void manage_spindle();
+void updateSpindlePID();
 
 FORCE_INLINE void tachometer_increment()
 {

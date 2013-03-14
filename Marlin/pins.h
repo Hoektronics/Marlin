@@ -1525,14 +1525,14 @@
 
   //these are new pins for spindle control
   #define HAS_SPINDLE
-  //#define SPINDLE_RELAY_PIN      4
-  #define SPINDLE_PWM_PIN      4
+  #define SPINDLE_RELAY_PIN      4
+  //#define SPINDLE_PWM_PIN      3
   #define INVERT_SPINDLE_ON      0
   #define MCP41XXX_SELECT_PIN   48
   #define TACHOMETER_INTERRUPT   0 //this is the interrupt, not the pin according to attachInterrupt
   
   //these are new pins for vacuum relay control
-  #define VACUUM_RELAY_PIN    3
+  //#define VACUUM_RELAY_PIN    3
   #define INVERT_VACUUM_ON    0
   
   //new pins for extra switches

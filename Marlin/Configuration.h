@@ -143,6 +143,26 @@
 //    #define  DEFAULT_Kd 440
 #endif // PIDTEMP
 
+#define PID_SPINDLE
+#ifdef PID_SPINDLE
+  // If the temperature difference between the target temperature and the actual temperature
+  // is more then PID_FUNCTIONAL_RANGE then the PID will be shut off and the heater will be set to min/max.
+  #define PID_SPINDLE_FUNCTIONAL_RANGE 1000
+  
+  // maximum PWM value for output (0-255)
+  #define PID_SPINDLE_MAX 240
+  
+  //limit for the integral term
+  #define PID_SPINDLE_INTEGRAL_DRIVE_MAX 240
+  
+  //smoothing factor withing the PID
+  #define PID_SPINDLE_K1 0.95
+  #define DEFAULT_SPINDLE_Kp 22.2
+  #define DEFAULT_SPINDLE_Ki 1.08  
+  #define DEFAULT_SPINDLE_Kd 114  
+
+#endif // PID_SPINDLE
+
 // Bed Temperature Control
 // Select PID or bang-bang with PIDTEMPBED.  If bang-bang, BED_LIMIT_SWITCHING will enable hysteresis
 //
