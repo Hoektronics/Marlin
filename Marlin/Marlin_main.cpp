@@ -841,6 +841,19 @@ static void homeaxis(int axis) {
 }
 #define HOMEAXIS(LETTER) homeaxis(LETTER##_AXIS)
 
+float check_feedrate(float feedrate)
+{  
+  for(int8_t i=0; i < NUM_AXIS; i++)
+  {
+    if (destination[i] != current_position[i])
+    {
+      feedrate = min(feedrate, max_feedrate[i]);
+    }
+  }
+  
+  return feedrate;
+}
+
 boolean process_gcodes(int code)
 {
   unsigned long codenum; //throw away variable
@@ -858,6 +871,7 @@ boolean process_gcodes(int code)
         feedrate = max_feedrate[1];
       if (code_seen('Z'))
         feedrate = max_feedrate[2];
+      feedrate = check_feedrate(feedrate);
       prepare_move();
       return false;
     }
@@ -869,6 +883,7 @@ boolean process_gcodes(int code)
       if (code_seen('F'))
         g1_feedrate = code_value();
       feedrate = g1_feedrate;
+      feedrate = check_feedrate(feedrate);
       prepare_move();
       return false;
     }
@@ -1048,7 +1063,6 @@ boolean process_gcodes(int code)
   
   return true;
 }
-
 
 boolean process_mcodes(int code)
 {
@@ -2003,12 +2017,9 @@ void get_coordinates()
       destination[i] = (float)code_value() + (axis_relative_modes[i] || relative_mode)*current_position[i];
       seen[i]=true;
     }
-    else destination[i] = current_position[i]; //Are these else lines really needed?
+    else
+      destination[i] = current_position[i];
   }
-  // if(code_seen('F')) {
-  //   next_feedrate = code_value();
-  //   if(next_feedrate > 0.0) feedrate = next_feedrate;
-  // }
   #ifdef FWRETRACT
   if(autoretract_enabled)
   if( !(seen[X_AXIS] || seen[Y_AXIS] || seen[Z_AXIS]) && seen[E_AXIS])
